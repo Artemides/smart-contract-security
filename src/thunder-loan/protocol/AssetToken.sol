@@ -75,14 +75,14 @@ contract AssetToken is ERC20 {
     function burn(address account, uint256 amount) external onlyThunderLoan {
         _burn(account, amount);
     }
-
+    //@audit USDC and weird ERC20's behaviour considered?
     function transferUnderlyingTo(
         address to,
         uint256 amount
     ) external onlyThunderLoan {
         i_underlying.safeTransfer(to, amount);
     }
-
+    //i if totalSupply is zero, newExchangeRate divisition is invalid
     function updateExchangeRate(uint256 fee) external onlyThunderLoan {
         // 1. Get the current exchange rate
         // 2. How big the fee is should be divided by the total supply
