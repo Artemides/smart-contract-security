@@ -8,6 +8,7 @@ import {IThunderLoan} from "./IThunderLoan.sol";
  * https://github.com/aave/aave-v3-core/blob/master/contracts/flashloan/interfaces/IFlashLoanReceiver.sol
  */
 interface IFlashLoanReceiver {
+    //e execute operation on flas-loan asset received
     function executeOperation(
         address token,
         uint256 amount,
