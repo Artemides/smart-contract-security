@@ -105,6 +105,7 @@ contract ThunderLoan is
     mapping(IERC20 => AssetToken) public s_tokenToAssetToken;
 
     // The fee in WEI, it should have 18 decimals. Each flash loan takes a flat fee of the token price.
+    //i consider turning it into immutable (s_feePrecision , s_flashLoanFee)
     uint256 private s_feePrecision;
     uint256 private s_flashLoanFee; // 0.3% ETH fee
 
@@ -166,6 +167,7 @@ contract ThunderLoan is
     /*//////////////////////////////////////////////////////////////
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    //i Centralization to Single Entity granted
     function initialize(address tswapAddress) external initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
@@ -173,7 +175,8 @@ contract ThunderLoan is
         s_feePrecision = 1e18;
         s_flashLoanFee = 3e15; // 0.3% ETH fee
     }
-
+    //i natspect required
+    //@audit  deposit as repay is malicius it redems assetTokens succesfully paying back a flashloan
     function deposit(
         IERC20 token,
         uint256 amount
@@ -184,6 +187,7 @@ contract ThunderLoan is
             exchangeRate;
         emit Deposit(msg.sender, token, amount);
         assetToken.mint(msg.sender, mintAmount);
+        //q are fees updated on each deposit?
         uint256 calculatedFee = getCalculatedFee(token, amount);
         assetToken.updateExchangeRate(calculatedFee);
         token.safeTransferFrom(msg.sender, address(assetToken), amount);
@@ -192,6 +196,8 @@ contract ThunderLoan is
     /// @notice Withdraws the underlying token from the asset token
     /// @param token The token they want to withdraw from
     /// @param amountOfAssetToken The amount of the underlying they want to withdraw
+
+    //@audit users are stuck with disallowed tokens, not being allowed to redeem
     function redeem(
         IERC20 token,
         uint256 amountOfAssetToken
@@ -207,7 +213,8 @@ contract ThunderLoan is
         assetToken.burn(msg.sender, amountOfAssetToken);
         assetToken.transferUnderlyingTo(msg.sender, amountUnderlying);
     }
-
+    //i no natspec
+    //q do flashloans are allowed only to contractReceivers
     function flashloan(
         address receiverAddress,
         IERC20 token,
@@ -230,7 +237,7 @@ contract ThunderLoan is
         assetToken.updateExchangeRate(fee);
 
         emit FlashLoan(receiverAddress, token, amount, fee, params);
-
+        //Flashloaning not being checked,allowing reentrancy causing in-row flash loans
         s_currentlyFlashLoaning[token] = true;
         assetToken.transferUnderlyingTo(receiverAddress, amount);
         // slither-disable-next-line unused-return reentrancy-vulnerabilities-2
@@ -256,7 +263,7 @@ contract ThunderLoan is
         }
         s_currentlyFlashLoaning[token] = false;
     }
-
+    //@audit repays aren't the only way to payback a flashloan
     function repay(IERC20 token, uint256 amount) public {
         if (!s_currentlyFlashLoaning[token]) {
             revert ThunderLoan__NotCurrentlyFlashLoaning();
@@ -297,7 +304,7 @@ contract ThunderLoan is
             return assetToken;
         }
     }
-
+    //@audit fees are calculated in terms of WETH not in tokens
     function getCalculatedFee(
         IERC20 token,
         uint256 amount
