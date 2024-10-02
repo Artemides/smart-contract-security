@@ -124,6 +124,10 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
      * @param s The s value of the signature
      * @param message The message/data to be sent to L1 (can be blank)
      */
+
+    //@audit signature replay attack
+    //@audit signature message can call Boss -> Vault -> approve -> atacker -> amount to Steal All the funds
+    //@audit on target call attackers might execute heavy ops in order to charge boss with higher gas
     function sendToL1(
         uint8 v,
         bytes32 r,
