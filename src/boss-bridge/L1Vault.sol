@@ -9,7 +9,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice This contract is responsible for locking & unlocking tokens on the L1 or L2
 /// @notice It will approve the bridge to move money in and out of this contract
 /// @notice It's owner should be the bridge
+
 contract L1Vault is Ownable {
+    //g must be immutable
     IERC20 public token;
 
     constructor(IERC20 _token) Ownable(msg.sender) {
@@ -17,6 +19,7 @@ contract L1Vault is Ownable {
     }
 
     function approveTo(address target, uint256 amount) external onlyOwner {
+        //i unused approve returned value
         token.approve(target, amount);
     }
 }

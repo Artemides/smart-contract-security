@@ -9,11 +9,13 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @dev This contract will be deployed on both an L1 & an L2
  */
 contract TokenFactory is Ownable {
+    //q tokens migh have the same symbol?
     mapping(string tokenSymbol => address tokenAddress)
         private s_tokenToAddress;
 
     event TokenDeployed(string symbol, address addr);
 
+    //i central authority risk
     constructor() Ownable(msg.sender) {}
 
     /*
@@ -21,6 +23,9 @@ contract TokenFactory is Ownable {
      * @param symbol The symbol of the new token
      * @param contractBytecode The bytecode of the new token
      */
+
+    //@audit bytecode on different chains might differ: create won't work on ZkSync
+
     function deployToken(
         string memory symbol,
         bytes memory contractBytecode
