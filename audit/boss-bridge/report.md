@@ -149,3 +149,7 @@
 +       emit TokenDeployed(symbol, address(token));
     }
 ```
+
+# [H-3] `DEPOSIT_LIMIT` constant verification gnerates `DOS`, unabling users to bridge their tokens to L2.
+
+**Description:** Limiting the deposit as mentioned in `BossBridge` documentation, allows the protocol to work within a controlled load of tokens bridging, but keep in mind that users won't be able to `Bridge` tokens as long as `DEPOSIT_LIMIT` lowers, generation `DOS` for some users.
