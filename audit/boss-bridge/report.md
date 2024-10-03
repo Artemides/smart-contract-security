@@ -98,3 +98,7 @@
 ```
 
 **Recommened Mitigation:**
+
+# [H-3] Users might charge with high gas consumption during a `Withdraw` to L1 from L2, making `BossBridge` to spend more ether in gas as the transfer occurs.
+
+**Description:** while requesting withdraws, `BossBridge` has to perform a transfer from `Vault` to a recipient, this operation is an external call, recipients might implement complex logic on receiving tokens.
