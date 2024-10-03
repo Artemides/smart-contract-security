@@ -63,9 +63,9 @@
 
 # [H-2] Any user is able to call `Bossbridge -> Vault::ApproveTo` to take control over an amount of tokens, in order to drain vault balance.
 
-**Description:** There's no regulation about what kind of messages a signer can sign, it's just a request so as to get a valid signature to redeem L2 tokens into L1, users can leverage it to drain funds.
+**Description:** There's no regulation about what kind of messages can be signed, it's just a request so as to get a valid signature to redeem L2 tokens into L1 `knowing that exists a valid Deposit event on L1`, users can leverage it to request signatures over any kind of message.
 
-**Impact:** the following vulnerabilty catches the attention of malicious users due to the facility oo draining all funds locked in a vault.
+**Impact:** the following vulnerabilty catches the attention of malicious users due to the facility oo draining all funds in a vault.
 
 **Proof of concept:**
 
