@@ -102,3 +102,50 @@
 # [H-3] Users might charge with high gas consumption during a `Withdraw` to L1 from L2, making `BossBridge` to spend more ether in gas as the transfer occurs.
 
 **Description:** while requesting withdraws, `BossBridge` has to perform a transfer from `Vault` to a recipient, this operation is an external call, recipients might implement complex logic on receiving tokens.
+
+# [H-3] CREATE opcode is not supported on ZkSync L2, unablaing token deployments.
+
+**Description:** ZkSync era is not fully compatible with EVM, as specified in their documentation, the usage of `CREATE` opcode differs from `EVM::CREATE`.
+
+**Impact:**
+
+```javascript
+    function deployToken(
+        string memory symbol,
+        bytes memory contractBytecode
+    ) public onlyOwner returns (address addr) {
+        assembly {
+           @> addr := create(
+                0,
+                add(contractBytecode, 0x20),
+                mload(contractBytecode)
+            )
+        }
+        s_tokenToAddress[symbol] = addr;
+        emit TokenDeployed(symbol, addr);
+    }
+```
+
+**Recomended Mitigation:**
+
+- usage of `new`keyword to deploy instead of low level call to `create`.
+
+```diff
+    function deployToken(
+        string memory symbol,
+        bytes memory contractBytecode
+    ) public onlyOwner returns (address addr) {
+-        assembly {
+-            addr := create(
+-                0,
+-                add(contractBytecode, 0x20),
+-                mload(contractBytecode)
+-            )
+-        }
++       L1Token token = new L1Token();
+-       s_tokenToAddress[symbol] = addr;
++       s_tokenToAddress[symbol] = address(token);
+-       emit TokenDeployed(symbol, addr);
++       emit TokenDeployed(symbol, address(token));
+    }
+```
