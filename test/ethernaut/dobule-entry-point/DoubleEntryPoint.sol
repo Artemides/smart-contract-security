@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {DelegateERC20} from "./Interfaces.sol";
 import "./Forta.sol";
-
 contract DoubleEntryPoint is
     ERC20("DoubleEntryPointToken", "DET"),
     DelegateERC20,
