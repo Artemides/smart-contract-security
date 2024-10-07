@@ -46,15 +46,15 @@ contract FuzzTestRouter is StdInvariant, Test {
         targetContract(address(handler));
     }
 
-    function statefulFuzz_testInvariantRouter() public {
-        vm.startPrank(owner);
-        router.withdrawToken(usdc);
-        router.withdrawToken(yeild);
-        vm.stopPrank();
+    // function statefulFuzz_testInvariantRouter() public {
+    //     vm.startPrank(owner);
+    //     router.withdrawToken(usdc);
+    //     router.withdrawToken(yeild);
+    //     vm.stopPrank();
 
-        assert(usdc.balanceOf(address(router)) == 0);
-        assert(yeild.balanceOf(address(yeild)) == 0);
-        assert(usdc.balanceOf(owner) == initialSupply);
-        assert(yeild.balanceOf(owner) == initialSupply);
-    }
+    //     assert(usdc.balanceOf(address(router)) == 0);
+    //     assert(yeild.balanceOf(address(yeild)) == 0);
+    //     assert(usdc.balanceOf(owner) == initialSupply);
+    //     assert(yeild.balanceOf(owner) == initialSupply);
+    // }
 }

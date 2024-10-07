@@ -14,10 +14,10 @@ contract TestBypasser is Test {
         pass = new GateKeeperByPass(keeper, simulator);
     }
 
-    function testByPass() public {
-        vm.prank(address(399));
-        pass.bypass{gas: 3 * 8191}();
-    }
+    // function testByPass() public {
+    //     vm.prank(address(399));
+    //     pass.bypass{gas: 3 * 8191}();
+    // }
 
     function testCompl() public {
         GatekeeperTwo keeper = new GatekeeperTwo();

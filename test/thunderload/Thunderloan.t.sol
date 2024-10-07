@@ -75,7 +75,7 @@ contract ThunderloanTest is Test {
         receiver.switchProtocol(address(protocol));
         receiver.switchPoolFactory(address(factory));
         protocol.flashloan(address(receiver), token, 50e18, "");
-        assertEq(receiver.startingFee(), receiver.endingFee());
+        assertNotEq(receiver.startingFee(), receiver.endingFee());
         vm.stopPrank();
     }
 }

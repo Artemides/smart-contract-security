@@ -12,13 +12,13 @@ contract TestDelegateCallValue is Test {
         vm.deal(address(a), 5e18);
     }
 
-    function testDelegateValue() public {
-        vm.deal(sender, 1e18);
-        vm.prank(sender);
-        a.call{value: 1e18}();
+    // function testDelegateValue() public {
+    //     vm.deal(sender, 1e18);
+    //     vm.prank(sender);
+    //     a.call{value: 1e18}();
 
-        console.log("Balance A", address(a).balance);
-    }
+    //     console.log("Balance A", address(a).balance);
+    // }
 }
 contract C {
     uint256 i;

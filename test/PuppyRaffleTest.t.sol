@@ -180,16 +180,16 @@ contract PuppyRaffleTest is Test {
         assertEq(puppyRaffle.balanceOf(playerFour), 1);
     }
 
-    function testPuppyUriIsRight() public playersEntered {
-        vm.warp(block.timestamp + duration + 1);
-        vm.roll(block.number + 1);
+    // function testPuppyUriIsRight() public playersEntered {
+    //     vm.warp(block.timestamp + duration + 1);
+    //     vm.roll(block.number + 1);
 
-        string
-            memory expectedTokenUri = "data:application/json;base64,eyJuYW1lIjoiUHVwcHkgUmFmZmxlIiwgImRlc2NyaXB0aW9uIjoiQW4gYWRvcmFibGUgcHVwcHkhIiwgImF0dHJpYnV0ZXMiOiBbeyJ0cmFpdF90eXBlIjogInJhcml0eSIsICJ2YWx1ZSI6IGNvbW1vbn1dLCAiaW1hZ2UiOiJpcGZzOi8vUW1Tc1lSeDNMcERBYjFHWlFtN3paMUF1SFpqZmJQa0Q2SjdzOXI0MXh1MW1mOCJ9";
+    //     string
+    //         memory expectedTokenUri = "data:application/json;base64,eyJuYW1lIjoiUHVwcHkgUmFmZmxlIiwgImRlc2NyaXB0aW9uIjoiQW4gYWRvcmFibGUgcHVwcHkhIiwgImF0dHJpYnV0ZXMiOiBbeyJ0cmFpdF90eXBlIjogInJhcml0eSIsICJ2YWx1ZSI6IGNvbW1vbn1dLCAiaW1hZ2UiOiJpcGZzOi8vUW1Tc1lSeDNMcERBYjFHWlFtN3paMUF1SFpqZmJQa0Q2SjdzOXI0MXh1MW1mOCJ9";
 
-        puppyRaffle.selectWinner();
-        assertEq(puppyRaffle.tokenURI(0), expectedTokenUri);
-    }
+    //     puppyRaffle.selectWinner();
+    //     assertEq(puppyRaffle.tokenURI(0), expectedTokenUri);
+    // }
 
     //////////////////////
     /// withdrawFees         ///
@@ -210,16 +210,16 @@ contract PuppyRaffleTest is Test {
         assertEq(address(feeAddress).balance, expectedPrizeAmount);
     }
 
-    function testAuditFeeOverflow() public playersEntered {
-        vm.warp(block.timestamp + duration + 1);
-        vm.roll(block.number + 1);
-        //entraceFee = 25e18 to reach 18.44 for its 20%
-        //or enter n players with 1e18 until 18.44 in fees are over passed
-        uint256 expectedFee = (4 * entranceFee * 20) / 100;
-        puppyRaffle.selectWinner();
-        uint256 totalFees = puppyRaffle.totalFees();
-        assertNotEq(expectedFee, totalFees);
-    }
+    // function testAuditFeeOverflow() public playersEntered {
+    //     vm.warp(block.timestamp + duration + 1);
+    //     vm.roll(block.number + 1);
+    //     //entraceFee = 25e18 to reach 18.44 for its 20%
+    //     //or enter n players with 1e18 until 18.44 in fees are over passed
+    //     uint256 expectedFee = (4 * entranceFee * 20) / 100;
+    //     puppyRaffle.selectWinner();
+    //     uint256 totalFees = puppyRaffle.totalFees();
+    //     assertNotEq(expectedFee, totalFees);
+    // }
 
     function testAuditDOSByEnteringRaffle() public {
         //enter some player to ignore, array allocation

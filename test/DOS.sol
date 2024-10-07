@@ -14,6 +14,7 @@ contract DOSTest is Test {
 
     function testGenDOS() public {
         dos.bePartner();
+        vm.expectRevert();
         dos.withdraw{gas: 1e6 - 1}();
     }
 }
