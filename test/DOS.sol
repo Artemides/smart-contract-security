@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.21;
+
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 contract DOSTest is Test {
     Denial denial;
     HDOS dos;
+
     function setUp() public {
         denial = new Denial();
         dos = new HDOS(denial);
@@ -14,13 +16,15 @@ contract DOSTest is Test {
 
     function testGenDOS() public {
         dos.bePartner();
-        dos.withdraw{gas: 1e6 - 1}();
+        vm.expectRevert();
+        dos.withdraw{ gas: 1e6 - 1 }();
     }
 }
 
 contract HDOS {
     Denial denial;
     uint256 readWrite;
+
     constructor(Denial _denial) {
         denial = _denial;
     }
@@ -63,7 +67,7 @@ contract Denial {
         uint256 amountToSend = address(this).balance / 100;
         // perform a call without checking return
         // The recipient can revert, the owner will still get their share
-        partner.call{value: amountToSend}("");
+        partner.call{ value: amountToSend }("");
         payable(owner).transfer(amountToSend);
         // keep track of last withdrawal time
         timeLastWithdrawn = block.timestamp;
@@ -71,7 +75,7 @@ contract Denial {
     }
 
     // allow deposit of funds
-    receive() external payable {}
+    receive() external payable { }
 
     // convenience function
     function contractBalance() public view returns (uint256) {

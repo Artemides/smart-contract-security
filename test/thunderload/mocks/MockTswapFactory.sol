@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: GNU General Public License v3.0
 pragma solidity 0.8.21;
 
-import {MockTswap} from "./MockTswap.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { MockTswap } from "./MockTswap.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MockTswapFactory {
     error PoolFactory__PoolAlreadyExists(address tokenAddress);
@@ -50,12 +50,7 @@ contract MockTswapFactory {
         }
         string memory liquidityTokenName = string.concat("T-Swap ", "LP");
         string memory liquidityTokenSymbol = string.concat("ts", "LPT");
-        MockTswap tPool = new MockTswap(
-            tokenAddress,
-            i_weth,
-            liquidityTokenName,
-            liquidityTokenSymbol
-        );
+        MockTswap tPool = new MockTswap(tokenAddress, i_weth, liquidityTokenName, liquidityTokenSymbol);
         s_pools[tokenAddress] = address(tPool);
         s_tokens[address(tPool)] = tokenAddress;
         emit PoolCreated(tokenAddress, address(tPool));
