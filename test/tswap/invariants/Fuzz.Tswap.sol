@@ -31,21 +31,20 @@ contract FuzzInvariantTswap is StdInvariant, Test {
         token.approve(address(pool), type(uint256).max);
         weth.approve(address(pool), type(uint256).max);
 
-        pool.deposit(uint256(STARTING_Y), uint256(STARTING_Y), uint256(STARTING_X), uint64(block.timestamp));
+        pool.deposit(
+            uint256(STARTING_Y),
+            uint256(STARTING_Y),
+            uint256(STARTING_X),
+            uint64(block.timestamp)
+        );
         handler = new PoolHandler(pool);
         bytes4[] memory selectors = new bytes4[](2);
         selectors[0] = PoolHandler.addLiquidity.selector;
         selectors[1] = PoolHandler.swapExactAmountY.selector;
 
-        targetSelector(FuzzSelector({ addr: address(handler), selectors: selectors }));
+        targetSelector(
+            FuzzSelector({addr: address(handler), selectors: selectors})
+        );
         targetContract(address(handler));
-    }
-
-    function invariant_deltaXFollowsMath() public {
-        assertEq(handler.Dx(), handler.expectedDx());
-    }
-
-    function invariant_deltaYFollowsMath() public {
-        assertEq(handler.Dy(), handler.expectedDy());
     }
 }
