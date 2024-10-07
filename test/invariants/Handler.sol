@@ -13,6 +13,7 @@ contract Handler is Test {
     YeildERC20 yeild;
     MockUSDC usdc;
     address owner;
+
     constructor(ERC20Router _router, YeildERC20 _yeild, MockUSDC _usdc) {
         router = _router;
         yeild = _yeild;
@@ -27,6 +28,7 @@ contract Handler is Test {
         router.depositToken(usdc, amount);
         vm.stopPrank();
     }
+
     function depositYeild(uint256 _amount) public {
         uint256 amount = bound(_amount, 0, usdc.balanceOf(owner));
         vm.startPrank(owner);

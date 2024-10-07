@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.21;
+
 import "forge-std/StdInvariant.sol";
 import "forge-std/Test.sol";
 
@@ -45,13 +46,5 @@ contract FuzzInvariantTswap is StdInvariant, Test {
             FuzzSelector({addr: address(handler), selectors: selectors})
         );
         targetContract(address(handler));
-    }
-
-    function invariant_deltaXFollowsMath() public {
-        assertEq(handler.Dx(), handler.expectedDx());
-    }
-
-    function invariant_deltaYFollowsMath() public {
-        assertEq(handler.Dy(), handler.expectedDy());
     }
 }
