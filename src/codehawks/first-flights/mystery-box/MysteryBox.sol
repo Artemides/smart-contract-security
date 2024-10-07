@@ -79,9 +79,9 @@ contract MysteryBox {
         require(_index < rewardsOwned[msg.sender].length, "Invalid index");
         rewardsOwned[_to].push(rewardsOwned[msg.sender][_index]);
         //q is this really removing ownings?
+        //@gas delete rewards leaves default values at index, making longer iterations by claimAllRewards, higher gas required.
         delete rewardsOwned[msg.sender][_index];
     }
-
     function claimAllRewards() public {
         uint256 totalValue = 0;
         for (uint256 i = 0; i < rewardsOwned[msg.sender].length; i++) {
@@ -104,7 +104,7 @@ contract MysteryBox {
         //@audit reentrancy attack (remove reward before transfer)
         (bool success, ) = payable(msg.sender).call{value: value}("");
         require(success, "Transfer failed");
-
+        //@gas delete rewards leaves default values at index, making longer iterations by claimAllRewards, higher gas required.
         delete rewardsOwned[msg.sender][_index];
     }
 
@@ -115,7 +115,7 @@ contract MysteryBox {
     function getRewardPool() public view returns (Reward[] memory) {
         return rewardPool;
     }
-
+    //@audit anyone can change protocol's owner
     function changeOwner(address _newOwner) public {
         owner = _newOwner;
     }
