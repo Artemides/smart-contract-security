@@ -15,9 +15,9 @@ contract MysteryBoxTest is Test {
         owner = makeAddr("owner");
         user1 = address(0x1);
         user2 = address(0x2);
-
+        deal(owner, 1 ether);
         vm.prank(owner);
-        mysteryBox = new MysteryBox();
+        mysteryBox = new MysteryBox{value: 0.1 ether}();
         console.log("Reward Pool Length:", mysteryBox.getRewardPool().length);
     }
 
@@ -27,6 +27,7 @@ contract MysteryBoxTest is Test {
 
     function testSetBoxPrice() public {
         uint256 newPrice = 0.2 ether;
+        vm.prank(owner);
         mysteryBox.setBoxPrice(newPrice);
         assertEq(mysteryBox.boxPrice(), newPrice);
     }
@@ -38,11 +39,12 @@ contract MysteryBoxTest is Test {
     }
 
     function testAddReward() public {
+        vm.prank(owner);
         mysteryBox.addReward("Diamond Coin", 2 ether);
         MysteryBox.Reward[] memory rewards = mysteryBox.getRewardPool();
         assertEq(rewards.length, 5);
-        assertEq(rewards[3].name, "Diamond Coin");
-        assertEq(rewards[3].value, 2 ether);
+        assertEq(rewards[4].name, "Diamond Coin");
+        assertEq(rewards[4].value, 2 ether);
     }
 
     function testAddReward_NotOwner() public {
@@ -86,7 +88,6 @@ contract MysteryBoxTest is Test {
         vm.expectRevert("No boxes to open");
         mysteryBox.openBox();
     }
-
     function testTransferReward_InvalidIndex() public {
         vm.prank(user1);
         vm.expectRevert("Invalid index");
@@ -105,7 +106,7 @@ contract MysteryBoxTest is Test {
         uint256 ownerBalanceAfter = owner.balance;
         console.log("Owner Balance After:", ownerBalanceAfter);
 
-        assertEq(ownerBalanceAfter - ownerBalanceBefore, 0.1 ether);
+        assertEq(ownerBalanceAfter - ownerBalanceBefore, 0.2 ether);
     }
 
     function testWithdrawFunds_NotOwner() public {
