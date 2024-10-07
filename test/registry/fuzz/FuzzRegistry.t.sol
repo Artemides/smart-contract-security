@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { Test, console2 } from "forge-std/Test.sol";
-import { Registry } from "../../../src/registry/Registry.sol";
+import {Test, console2} from "forge-std/Test.sol";
+import {Registry} from "../../../src/registry/Registry.sol";
 
 contract RegistryTest is Test {
     Registry registry;
@@ -36,14 +36,16 @@ contract RegistryTest is Test {
 
     function test_RegistryUnSuccessfull(uint256 value) public {
         uint256 price = registry.PRICE();
-        if (value > price) {
+        if (value >= price) {
             return;
         }
 
         vm.deal(alice, value);
-        vm.expectRevert(abi.encodeWithSelector(PaymentNotEnough.selector, price, value));
+        vm.expectRevert(
+            abi.encodeWithSelector(PaymentNotEnough.selector, price, value)
+        );
         vm.prank(alice);
-        registry.register{ value: value }();
+        registry.register{value: value}();
     }
     /**
      * Code your fuzz test here
