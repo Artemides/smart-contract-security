@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.21;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /*
  * This contract represents a vault for ERC20 tokens.
@@ -17,8 +17,7 @@ contract ERC20Router {
     error ERC20Router__UnsupportedToken();
 
     mapping(IERC20 => bool) public tokenIsSupported;
-    mapping(address user => mapping(IERC20 token => uint256 balance))
-        public tokenBalances;
+    mapping(address user => mapping(IERC20 token => uint256 balance)) public tokenBalances;
 
     modifier requireSupportedToken(IERC20 token) {
         if (!tokenIsSupported[token]) revert ERC20Router__UnsupportedToken();
@@ -31,10 +30,7 @@ contract ERC20Router {
         }
     }
 
-    function depositToken(
-        IERC20 token,
-        uint256 amount
-    ) external requireSupportedToken(token) {
+    function depositToken(IERC20 token, uint256 amount) external requireSupportedToken(token) {
         tokenBalances[msg.sender][token] += amount;
         token.safeTransferFrom(msg.sender, address(this), amount);
     }

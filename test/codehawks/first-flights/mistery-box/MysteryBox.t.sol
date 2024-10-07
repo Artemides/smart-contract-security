@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2} from "forge-std/Test.sol";
+import { console2 } from "forge-std/Test.sol";
 import "forge-std/Test.sol";
 import "./../../../../src/codehawks/first-flights/mystery-box/MysteryBox.sol";
 
@@ -17,7 +17,7 @@ contract MysteryBoxTest is Test {
         user2 = address(0x2);
         deal(owner, 1 ether);
         vm.prank(owner);
-        mysteryBox = new MysteryBox{value: 0.1 ether}();
+        mysteryBox = new MysteryBox{ value: 0.1 ether }();
         console.log("Reward Pool Length:", mysteryBox.getRewardPool().length);
     }
 
@@ -56,7 +56,7 @@ contract MysteryBoxTest is Test {
     function testBuyBox() public {
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        mysteryBox.buyBox{value: 0.1 ether}();
+        mysteryBox.buyBox{ value: 0.1 ether }();
         assertEq(mysteryBox.boxesOwned(user1), 1);
     }
 
@@ -64,13 +64,13 @@ contract MysteryBoxTest is Test {
         vm.deal(user1, 1 ether);
         vm.prank(user1);
         vm.expectRevert("Incorrect ETH sent");
-        mysteryBox.buyBox{value: 0.05 ether}();
+        mysteryBox.buyBox{ value: 0.05 ether }();
     }
 
     function testOpenBox() public {
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        mysteryBox.buyBox{value: 0.1 ether}();
+        mysteryBox.buyBox{ value: 0.1 ether }();
         console.log("Before Open:", mysteryBox.boxesOwned(user1));
         vm.prank(user1);
         mysteryBox.openBox();
@@ -88,6 +88,7 @@ contract MysteryBoxTest is Test {
         vm.expectRevert("No boxes to open");
         mysteryBox.openBox();
     }
+
     function testTransferReward_InvalidIndex() public {
         vm.prank(user1);
         vm.expectRevert("Invalid index");
@@ -97,7 +98,7 @@ contract MysteryBoxTest is Test {
     function testWithdrawFunds() public {
         vm.deal(user1, 1 ether);
         vm.prank(user1);
-        mysteryBox.buyBox{value: 0.1 ether}();
+        mysteryBox.buyBox{ value: 0.1 ether }();
 
         uint256 ownerBalanceBefore = owner.balance;
         console.log("Owner Balance Before:", ownerBalanceBefore);

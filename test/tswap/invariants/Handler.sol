@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 
 import "./../../../src/tswap/PoolFactory.sol";
 import "./../mocks/MockERC20.sol";
+
 contract PoolHandler is Test {
     PoolFactory factory;
     TSwapPool pool;
@@ -29,11 +30,7 @@ contract PoolHandler is Test {
     }
 
     function addLiquidity(uint256 _amountY) public {
-        uint256 amountY = bound(
-            _amountY,
-            pool.getMinimumWethDepositAmount(),
-            type(uint64).max
-        );
+        uint256 amountY = bound(_amountY, pool.getMinimumWethDepositAmount(), type(uint64).max);
 
         expectedDy = amountY;
         expectedDx = pool.getPoolTokensToDepositBasedOnWeth(amountY);
@@ -58,26 +55,17 @@ contract PoolHandler is Test {
     }
 
     function swapExactAmountY(uint256 _amountY) public {
-        if (
-            weth.balanceOf(address(pool)) <= pool.getMinimumWethDepositAmount()
-        ) {
+        if (weth.balanceOf(address(pool)) <= pool.getMinimumWethDepositAmount()) {
             return;
         }
 
-        uint256 amountY = bound(
-            _amountY,
-            pool.getMinimumWethDepositAmount(),
-            weth.balanceOf(address(pool))
-        );
+        uint256 amountY = bound(_amountY, pool.getMinimumWethDepositAmount(), weth.balanceOf(address(pool)));
         if (amountY == weth.balanceOf(address(pool))) {
             return;
         }
 
-        uint256 _expectedDx = pool.getInputAmountBasedOnOutput(
-            amountY,
-            token.balanceOf(address(pool)),
-            weth.balanceOf(address(pool))
-        );
+        uint256 _expectedDx =
+            pool.getInputAmountBasedOnOutput(amountY, token.balanceOf(address(pool)), weth.balanceOf(address(pool)));
         if (_expectedDx > type(uint64).max) {
             return;
         }

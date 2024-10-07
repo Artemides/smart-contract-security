@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {Registry} from "../../src/registry/Registry.sol";
+import { Test, console2 } from "forge-std/Test.sol";
+import { Registry } from "../../src/registry/Registry.sol";
 
 contract RegistryTest is Test {
     Registry registry;
@@ -22,22 +22,16 @@ contract RegistryTest is Test {
 
         uint256 aliceBalanceBefore = address(alice).balance;
 
-        registry.register{value: amountToPay}();
+        registry.register{ value: amountToPay }();
 
         uint256 aliceBalanceAfter = address(alice).balance;
 
         assertTrue(registry.isRegistered(alice), "Did not register user");
-        assertEq(
-            address(registry).balance,
-            registry.PRICE(),
-            "Unexpected registry balance"
-        );
-        assertEq(
-            aliceBalanceAfter,
-            aliceBalanceBefore - registry.PRICE(),
-            "Unexpected user balance"
-        );
+        assertEq(address(registry).balance, registry.PRICE(), "Unexpected registry balance");
+        assertEq(aliceBalanceAfter, aliceBalanceBefore - registry.PRICE(), "Unexpected user balance");
     }
 
-    /** Code your fuzz test here */
+    /**
+     * Code your fuzz test here
+     */
 }

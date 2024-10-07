@@ -44,9 +44,7 @@ contract MysteryBox {
         require(boxesOwned[msg.sender] > 0, "No boxes to open");
 
         // Generate a random number between 0 and 99
-        uint256 randomValue = uint256(
-            keccak256(abi.encodePacked(block.timestamp, msg.sender))
-        ) % 100;
+        uint256 randomValue = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 100;
 
         // Determine the reward based on probability
         if (randomValue < 75) {
@@ -68,9 +66,7 @@ contract MysteryBox {
 
     function withdrawFunds() public {
         require(msg.sender == owner, "Only owner can withdraw");
-        (bool success, ) = payable(owner).call{value: address(this).balance}(
-            ""
-        );
+        (bool success,) = payable(owner).call{ value: address(this).balance }("");
         require(success, "Transfer failed");
     }
 
@@ -87,7 +83,7 @@ contract MysteryBox {
         }
         require(totalValue > 0, "No rewards to claim");
 
-        (bool success, ) = payable(msg.sender).call{value: totalValue}("");
+        (bool success,) = payable(msg.sender).call{ value: totalValue }("");
         require(success, "Transfer failed");
 
         delete rewardsOwned[msg.sender];
@@ -98,7 +94,7 @@ contract MysteryBox {
         uint256 value = rewardsOwned[msg.sender][_index].value;
         require(value > 0, "No reward to claim");
 
-        (bool success, ) = payable(msg.sender).call{value: value}("");
+        (bool success,) = payable(msg.sender).call{ value: value }("");
         require(success, "Transfer failed");
 
         delete rewardsOwned[msg.sender][_index];

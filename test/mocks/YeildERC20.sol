@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract YeildERC20 is ERC20 {
     uint256 public constant INITIAL_SUPPLY = 1_000_000e18;
@@ -24,11 +24,7 @@ contract YeildERC20 is ERC20 {
      *
      * Every 10 transactions, we take a fee of 10% and send it to the owner.
      */
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal virtual override {
+    function _update(address from, address to, uint256 value) internal virtual override {
         if (to == owner) {
             super._update(from, to, value);
         } else if (count >= 10) {

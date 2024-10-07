@@ -2,8 +2,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {Test, console} from "forge-std/Test.sol";
-import {PuppyRaffle} from "../src/PuppyRaffle.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { PuppyRaffle } from "../src/PuppyRaffle.sol";
 
 contract PuppyRaffleTest is Test {
     PuppyRaffle puppyRaffle;
@@ -26,7 +26,7 @@ contract PuppyRaffleTest is Test {
     function testCanEnterRaffle() public {
         address[] memory players = new address[](1);
         players[0] = playerOne;
-        puppyRaffle.enterRaffle{value: entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee }(players);
         assertEq(puppyRaffle.players(0), playerOne);
     }
 
@@ -41,7 +41,7 @@ contract PuppyRaffleTest is Test {
         address[] memory players = new address[](2);
         players[0] = playerOne;
         players[1] = playerTwo;
-        puppyRaffle.enterRaffle{value: entranceFee * 2}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 2 }(players);
         assertEq(puppyRaffle.players(0), playerOne);
         assertEq(puppyRaffle.players(1), playerTwo);
     }
@@ -51,7 +51,7 @@ contract PuppyRaffleTest is Test {
         players[0] = playerOne;
         players[1] = playerTwo;
         vm.expectRevert("PuppyRaffle: Must send enough to enter raffle");
-        puppyRaffle.enterRaffle{value: entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee }(players);
     }
 
     function testCantEnterWithDuplicatePlayers() public {
@@ -59,7 +59,7 @@ contract PuppyRaffleTest is Test {
         players[0] = playerOne;
         players[1] = playerOne;
         vm.expectRevert("PuppyRaffle: Duplicate player");
-        puppyRaffle.enterRaffle{value: entranceFee * 2}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 2 }(players);
     }
 
     function testCantEnterWithDuplicatePlayersMany() public {
@@ -68,7 +68,7 @@ contract PuppyRaffleTest is Test {
         players[1] = playerTwo;
         players[2] = playerOne;
         vm.expectRevert("PuppyRaffle: Duplicate player");
-        puppyRaffle.enterRaffle{value: entranceFee * 3}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 3 }(players);
     }
 
     //////////////////////
@@ -77,7 +77,7 @@ contract PuppyRaffleTest is Test {
     modifier playerEntered() {
         address[] memory players = new address[](1);
         players[0] = playerOne;
-        puppyRaffle.enterRaffle{value: entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee }(players);
         _;
     }
 
@@ -114,7 +114,7 @@ contract PuppyRaffleTest is Test {
         address[] memory players = new address[](2);
         players[0] = playerOne;
         players[1] = playerTwo;
-        puppyRaffle.enterRaffle{value: entranceFee * 2}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 2 }(players);
 
         assertEq(puppyRaffle.getActivePlayerIndex(playerOne), 0);
         assertEq(puppyRaffle.getActivePlayerIndex(playerTwo), 1);
@@ -129,7 +129,7 @@ contract PuppyRaffleTest is Test {
         players[1] = playerTwo;
         players[2] = playerThree;
         players[3] = playerFour;
-        puppyRaffle.enterRaffle{value: entranceFee * 4}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 4 }(players);
         _;
     }
 
@@ -143,7 +143,7 @@ contract PuppyRaffleTest is Test {
         players[0] = playerOne;
         players[1] = playerTwo;
         players[2] = address(3);
-        puppyRaffle.enterRaffle{value: entranceFee * 3}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee * 3 }(players);
 
         vm.warp(block.timestamp + duration + 1);
         vm.roll(block.number + 1);
@@ -185,7 +185,8 @@ contract PuppyRaffleTest is Test {
     //     vm.roll(block.number + 1);
 
     //     string
-    //         memory expectedTokenUri = "data:application/json;base64,eyJuYW1lIjoiUHVwcHkgUmFmZmxlIiwgImRlc2NyaXB0aW9uIjoiQW4gYWRvcmFibGUgcHVwcHkhIiwgImF0dHJpYnV0ZXMiOiBbeyJ0cmFpdF90eXBlIjogInJhcml0eSIsICJ2YWx1ZSI6IGNvbW1vbn1dLCAiaW1hZ2UiOiJpcGZzOi8vUW1Tc1lSeDNMcERBYjFHWlFtN3paMUF1SFpqZmJQa0Q2SjdzOXI0MXh1MW1mOCJ9";
+    //         memory expectedTokenUri =
+    // "data:application/json;base64,eyJuYW1lIjoiUHVwcHkgUmFmZmxlIiwgImRlc2NyaXB0aW9uIjoiQW4gYWRvcmFibGUgcHVwcHkhIiwgImF0dHJpYnV0ZXMiOiBbeyJ0cmFpdF90eXBlIjogInJhcml0eSIsICJ2YWx1ZSI6IGNvbW1vbn1dLCAiaW1hZ2UiOiJpcGZzOi8vUW1Tc1lSeDNMcERBYjFHWlFtN3paMUF1SFpqZmJQa0Q2SjdzOXI0MXh1MW1mOCJ9";
 
     //     puppyRaffle.selectWinner();
     //     assertEq(puppyRaffle.tokenURI(0), expectedTokenUri);
@@ -225,21 +226,21 @@ contract PuppyRaffleTest is Test {
         //enter some player to ignore, array allocation
         address[] memory aPlayer = new address[](1);
         aPlayer[0] = address(100);
-        puppyRaffle.enterRaffle{value: aPlayer.length * entranceFee}(aPlayer);
+        puppyRaffle.enterRaffle{ value: aPlayer.length * entranceFee }(aPlayer);
 
         address[] memory players = new address[](2);
         players[0] = playerOne;
         players[1] = playerTwo;
 
         uint256 firstJoinGasInit = gasleft();
-        puppyRaffle.enterRaffle{value: players.length * entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: players.length * entranceFee }(players);
         uint256 firstJoinCost = (firstJoinGasInit - gasleft());
 
         players[0] = playerThree;
         players[1] = playerFour;
 
         uint256 secondJoinGasInit = gasleft();
-        puppyRaffle.enterRaffle{value: players.length * entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: players.length * entranceFee }(players);
         uint256 secondJoinCost = (secondJoinGasInit - gasleft());
 
         assertGt(secondJoinCost, firstJoinCost);
@@ -249,7 +250,7 @@ contract PuppyRaffleTest is Test {
         AtackerContract atacker = new AtackerContract(puppyRaffle);
         address[] memory players = new address[](1);
         players[0] = address(atacker);
-        puppyRaffle.enterRaffle{value: entranceFee}(players);
+        puppyRaffle.enterRaffle{ value: entranceFee }(players);
 
         uint256 index = puppyRaffle.getActivePlayerIndex(address(atacker));
 
@@ -261,6 +262,7 @@ contract PuppyRaffleTest is Test {
         assertGt(initBalance, entranceFee);
         assertEq(endingBalance, 0);
     }
+
     function testAuditWeakRNG() public playersEntered {
         vm.warp(block.timestamp + duration + 1);
         vm.roll(block.number + 1);
@@ -268,17 +270,7 @@ contract PuppyRaffleTest is Test {
         uint256 myIndex = puppyRaffle.getActivePlayerIndex(playerTwo);
         uint256 potentialRNG;
         while (myIndex != potentialRNG) {
-            potentialRNG =
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            playerTwo,
-                            block.timestamp,
-                            block.difficulty
-                        )
-                    )
-                ) %
-                4;
+            potentialRNG = uint256(keccak256(abi.encodePacked(playerTwo, block.timestamp, block.difficulty))) % 4;
             vm.warp(block.timestamp + 1);
             vm.roll(block.number + 1);
         }
@@ -288,6 +280,7 @@ contract PuppyRaffleTest is Test {
         address winner = puppyRaffle.previousWinner();
         assertEq(winner, playerTwo);
     }
+
     function testAuditRevertAttack() public playersEntered {
         vm.warp(block.timestamp + duration + 1);
         vm.roll(block.number + 1);

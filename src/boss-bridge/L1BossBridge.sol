@@ -14,19 +14,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {L1Vault} from "./L1Vault.sol";
+import { L1Vault } from "./L1Vault.sol";
 
 contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     //g must be constant
+
     uint256 public DEPOSIT_LIMIT = 100_000 ether;
     IERC20 public immutable token;
     L1Vault public immutable vault;
@@ -53,6 +54,7 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
     //us what happens if signer get's dissabled?
+
     function setSigner(address account, bool enabled) external onlyOwner {
         signers[account] = enabled;
     }
@@ -66,12 +68,9 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
      * @param l2Recipient The address of the user who will receive the tokens on L2
      * @param amount The amount of tokens to deposit
      */
-    //@audit steal funds during transfer From: approves might be leveraged by malicious users to transfer approved amount to themselves
-    function depositTokensToL2(
-        address from,
-        address l2Recipient,
-        uint256 amount
-    ) external whenNotPaused {
+    //@audit steal funds during transfer From: approves might be leveraged by malicious users to transfer approved
+    // amount to themselves
+    function depositTokensToL2(address from, address l2Recipient, uint256 amount) external whenNotPaused {
         if (token.balanceOf(address(vault)) + amount > DEPOSIT_LIMIT) {
             revert L1BossBridge__DepositLimitReached();
         }
@@ -94,13 +93,7 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
      * @param r The r value of the signature
      * @param s The s value of the signature
      */
-    function withdrawTokensToL1(
-        address to,
-        uint256 amount,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
+    function withdrawTokensToL1(address to, uint256 amount, uint8 v, bytes32 r, bytes32 s) external {
         sendToL1(
             v,
             r,
@@ -108,10 +101,7 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
             abi.encode(
                 address(token),
                 0, // value
-                abi.encodeCall(
-                    IERC20.transferFrom,
-                    (address(vault), to, amount)
-                )
+                abi.encodeCall(IERC20.transferFrom, (address(vault), to, amount))
             )
         );
     }
@@ -128,29 +118,16 @@ contract L1BossBridge is Ownable, Pausable, ReentrancyGuard {
     //@audit signature replay attack
     //@audit signature message can call Boss -> Vault -> approve -> atacker -> amount to Steal All the funds
     //@audit on target call attackers might execute heavy ops in order to charge boss with higher gas
-    function sendToL1(
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        bytes memory message
-    ) public nonReentrant whenNotPaused {
-        address signer = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(keccak256(message)),
-            v,
-            r,
-            s
-        );
+    function sendToL1(uint8 v, bytes32 r, bytes32 s, bytes memory message) public nonReentrant whenNotPaused {
+        address signer = ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(keccak256(message)), v, r, s);
 
         if (!signers[signer]) {
             revert L1BossBridge__Unauthorized();
         }
 
-        (address target, uint256 value, bytes memory data) = abi.decode(
-            message,
-            (address, uint256, bytes)
-        );
+        (address target, uint256 value, bytes memory data) = abi.decode(message, (address, uint256, bytes));
 
-        (bool success, ) = target.call{value: value}(data);
+        (bool success,) = target.call{ value: value }(data);
         if (!success) {
             revert L1BossBridge__CallFailed();
         }

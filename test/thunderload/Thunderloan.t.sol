@@ -3,7 +3,7 @@
 pragma solidity 0.8.21;
 
 import "forge-std/Test.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./../tswap/mocks/MockERC20.sol";
 import "forge-std/console.sol";
 import "./../../src/thunder-loan/protocol/ThunderLoan.sol";
@@ -49,12 +49,7 @@ contract ThunderloanTest is Test {
         token.approve(pool, 100e18);
         WETH.approve(pool, 100e18);
 
-        MockTswap(pool).deposit(
-            POOL_WETH_SUPPLY,
-            POOL_WETH_SUPPLY,
-            POOL_WETH_SUPPLY,
-            block.timestamp
-        );
+        MockTswap(pool).deposit(POOL_WETH_SUPPLY, POOL_WETH_SUPPLY, POOL_WETH_SUPPLY, block.timestamp);
         vm.stopPrank();
 
         vm.startPrank(pOwner);
@@ -99,34 +94,27 @@ contract FlashloanReceiver is IFlashLoanReceiver {
         address token,
         uint256 amount,
         uint256 fee,
-        address /* initiator */,
+        address, /* initiator */
         bytes calldata /* params */
-    ) external returns (bool) {
+    )
+        external
+        returns (bool)
+    {
         MockTswap pool = MockTswap(factory.getPool(token));
         if (!gotLoan) {
             gotLoan = true;
             startingFee = fee;
 
             (uint256 wethReserves, uint256 tokenReserves) = pool.getReserves();
-            uint256 expected = pool.getOutputAmountBasedOnInput(
-                amount,
-                wethReserves,
-                tokenReserves
-            );
+            uint256 expected = pool.getOutputAmountBasedOnInput(amount, wethReserves, tokenReserves);
             IERC20(token).approve(address(pool), amount);
-            pool.swapPoolTokenForWethBasedOnInputPoolToken(
-                amount,
-                expected,
-                block.timestamp
-            );
+            pool.swapPoolTokenForWethBasedOnInputPoolToken(amount, expected, block.timestamp);
             protocol.flashloan(address(this), IERC20(token), 50e18, "");
         } else {
             endingFee = fee;
         }
 
-        address repayAddress = address(
-            protocol.getAssetFromToken(IERC20(token))
-        );
+        address repayAddress = address(protocol.getAssetFromToken(IERC20(token)));
         IERC20(token).transfer(repayAddress, amount + fee);
         return true;
     }
