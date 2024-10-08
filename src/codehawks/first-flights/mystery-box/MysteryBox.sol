@@ -44,7 +44,10 @@ contract MysteryBox {
         require(boxesOwned[msg.sender] > 0, "No boxes to open");
 
         // Generate a random number between 0 and 99
-        uint256 randomValue = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 100;
+        //@audit weak random number generation
+        uint256 randomValue = uint256(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender))
+        ) % 100;
 
         // Determine the reward based on probability
         if (randomValue < 75) {
@@ -66,37 +69,42 @@ contract MysteryBox {
 
     function withdrawFunds() public {
         require(msg.sender == owner, "Only owner can withdraw");
-        (bool success,) = payable(owner).call{ value: address(this).balance }("");
+        (bool success, ) = payable(owner).call{value: address(this).balance}(
+            ""
+        );
         require(success, "Transfer failed");
     }
 
     function transferReward(address _to, uint256 _index) public {
         require(_index < rewardsOwned[msg.sender].length, "Invalid index");
         rewardsOwned[_to].push(rewardsOwned[msg.sender][_index]);
+        //q is this really removing ownings?
+        //@gas delete rewards leaves default values at index, making longer iterations by claimAllRewards, higher gas required.
         delete rewardsOwned[msg.sender][_index];
     }
-
     function claimAllRewards() public {
         uint256 totalValue = 0;
         for (uint256 i = 0; i < rewardsOwned[msg.sender].length; i++) {
             totalValue += rewardsOwned[msg.sender][i].value;
         }
         require(totalValue > 0, "No rewards to claim");
-
-        (bool success,) = payable(msg.sender).call{ value: totalValue }("");
+        //@audit reentrancy attack (delete rewards before transfers)
+        (bool success, ) = payable(msg.sender).call{value: totalValue}("");
         require(success, "Transfer failed");
 
         delete rewardsOwned[msg.sender];
     }
 
     function claimSingleReward(uint256 _index) public {
+        //@audit index reward out of bounds
         require(_index <= rewardsOwned[msg.sender].length, "Invalid index");
         uint256 value = rewardsOwned[msg.sender][_index].value;
         require(value > 0, "No reward to claim");
 
-        (bool success,) = payable(msg.sender).call{ value: value }("");
+        //@audit reentrancy attack (remove reward before transfer)
+        (bool success, ) = payable(msg.sender).call{value: value}("");
         require(success, "Transfer failed");
-
+        //@gas delete rewards leaves default values at index, making longer iterations by claimAllRewards, higher gas required.
         delete rewardsOwned[msg.sender][_index];
     }
 
@@ -107,7 +115,7 @@ contract MysteryBox {
     function getRewardPool() public view returns (Reward[] memory) {
         return rewardPool;
     }
-
+    //@audit anyone can change protocol's owner
     function changeOwner(address _newOwner) public {
         owner = _newOwner;
     }
