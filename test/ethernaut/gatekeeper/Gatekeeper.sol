@@ -33,7 +33,7 @@ contract GatekeeperExploitTest is Test {
         vm.prank(address(me));
         exp.call(payable(gate), 0, abi.encode(gate.enter.selector));
 
-        assertEq(gate.entrant(), me, "No Entrant claimed");
+        assertEq(gate.entrant(), DEFAULT_SENDER, "No Entrant claimed");
     }
 }
 
