@@ -20,6 +20,10 @@ object "ERC721"{
             }
             
             function balanceOf(owner)->bal{
+                if iszero(owner) {
+                    revertERC721InvalidOwner(owner)
+                }
+
                 bal:=sload(_mapping(_ownersSlot(),owner))
             }
             
@@ -60,6 +64,16 @@ object "ERC721"{
             
             function selector() -> sel{
                 sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
+            }
+
+            function require(condition) {
+                if iszero(condition) { revert(0,0) }
+            }
+
+            function revertERC721InvalidOwner(owner){
+                mstore(0,0x89c62b64)
+                mstore(0x20,owner)
+                revert(0x1c,0x24)
             }
         }
     }
