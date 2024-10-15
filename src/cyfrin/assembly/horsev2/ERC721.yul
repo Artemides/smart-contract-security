@@ -12,17 +12,21 @@ object "ERC721"{
                 // 
             }
             case 0x70a08231 /*balanceOf(address owner)*/{
-                balanceOf(decodeAddress(0))
+                let bal := balanceOf(decodeAddress(0))
+                returnUint(bal)
+            }
+            default {
+                revert(0,0)
             }
             
-            function balanceOf(owner)->balance{
-                balance:=sload(_mapping(_ownersSlot(),owner))
-                mstore(0,balance)
+            function balanceOf(owner)->bal{
+                bal:=sload(_mapping(_ownersSlot(),owner))
+                mstore(0,bal)
                 return(0,0)
             }
             
             function decodeAddress(offset)-> v{
-                v := decodeUint(offset);
+                v := decodeUint(offset)
                 if iszero(iszero(and(v,not(0xffffffffffffffffffffffffffffffffffffffff)))){
                     revert(0,0)
                 }            
@@ -36,6 +40,12 @@ object "ERC721"{
 
                 v:=calldataload(pos)
             }
+
+            function returnUint(v){
+                mstore(0,v)
+                return(0,0x20)
+            }
+
             function _nameSlot() ->s { s:=0}
             function _symbolSlot() ->s { s:=1}
             function _ownersSlot() ->s { s:=2}
@@ -50,8 +60,8 @@ object "ERC721"{
                 s := keccak256(0,0x40)
             }
             
-            function selector() -> selector{
-                selector := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
+            function selector() -> sel{
+                sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
             }
         }
     }
