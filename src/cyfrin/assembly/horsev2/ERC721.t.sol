@@ -12,6 +12,7 @@ contract ERC721Test is Test {
 
     error ERC721InvalidOwner(address owner);
     error ERC721NonexistentToken(uint256);
+    error ERC721InsufficientApproval(address operator, uint256 tokenId);
 
     function run() public {
         setUp();

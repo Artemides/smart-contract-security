@@ -15,6 +15,10 @@ object "ERC721"{
                 let bal := balanceOf(decodeAddress(0))
                 returnUint(bal)
             }
+            case 0xe985e9c5 /*isApprovedForAll(address, address )*/{
+                //read args
+                let approved:= isApprovedForAll();
+            }
             default {
                 revert(0,0)
             }
@@ -24,9 +28,162 @@ object "ERC721"{
                     revertERC721InvalidOwner(owner)
                 }
 
-                bal:=sload(_mapping(_ownersSlot(),owner))
+                bal := sload(_mapping(owner,_ownersSlot()))
+            }
+
+            function ownerOf(tokenId){
+               let owner := _ownerOf(tokenId)             
+               returnUint(owner)
+            }
+
+            function _requireOwned(tokenId) -> owner{
+                owner := _ownerOf(tokenId)
+                if iszero(owner) {
+                    revertERC721NonexistentToken(tokenId)
+                }
+            }
+
+            function _ownerOf(tokenId) -> owner{
+                owner := sload(_mapping(tokenId,_ownersSlot())                
+            }
+
+            function _update(to,tokenId,auth) -> from{
+                from := _ownerOf(tokenId)
+                if eq(iszero(auth),0) {
+                    _checkAuthorized(from,auth,tokenId)
+                }
+
+                if not(iszero(from)){
+                    _approve(0x0,tokenId,0x0,0x0)
+                    let slot := _mapping(from,_balancesSlot())
+                    let prev := sload(slot)
+                    sstore(slot, prev - 1)
+                }
+
+                if not(iszero(to)){
+                    let slot := _mapping(to,_balancesSlot())
+                    let prev := sload(slot)
+                    sstore(slot, prev + 1)
+                }
+
+                let slot := _mapping(tokenId,_ownersSlot())
+                sstore(slot,to)
+                emitTransfer(from,to,tokenId)
+                //return
+            }
+            function _approve(to, tokenId, auth){
+                _approve(to, tokenId, auth, 0x1)
+            }
+            function _approve(to, tokenId, auth, emitEvent){
+                if or(emitEvent,not(iszero(auth))){
+                    let owner := _requireOwned(tokenId)
+
+                    if and(not(iszero(auth)), and(not(eq(owner,auth)), not(isApprovedForAll(owner,auth)))){
+                        revertERC721InvalidApprover(auth)
+                    }
+
+                    if emitEvent {
+                        emitApproval(owner,to,tokenId)
+                    }
+                }
+
+                let slot := _mapping(tokenId,_tokenApprovalsSlot())
+                sstore(slot,to)
+            }
+
+            function _checkAuthorized(owner,spender,tokenId){
+                if iszero(_isAuthorized(owner,spender,tokenId)){
+                    if iszero(owner){
+                        revertERC721NonexistentToken(owner)
+                    }else{
+                        revertERC721InsufficientApproval(spender,tokenId)
+                    }
+                }
+            }
+
+            function _isAuthorized(owner,spender,tokenId) -> authorized{
+                // 0 -> 1 -> 0 
+                let nonZeroSpender := not(iszero(spender))
+                let selfAuth := eq(owner, spender)
+                let approvedForAll := isApprovedForAll(owner, spender)
+                let spenderApproved = eq(_getApproved(tokenId), spender)
+                authorized := and(nonZeroSpender, or(selfAuth,or(approvedForAll, spenderApproved)));
+
+            }
+
+            function isApprovedForAll(owner, operator) -> approved {
+                //keccak(operator, keccak(owner.i))
+                let slot := _mapping(operator,_mapping(owner,_operatorApprovalsSlot()))
+                approved := sload(slot)
+            }
+
+            function _getApproved(tokenId) -> approved {
+                let slot := _mapping(tokenId,_tokenApprovalsSlot())
+                approved := sload(slot)
             }
             
+            function _nameSlot() ->s { s:=0}
+            function _symbolSlot() ->s { s:=1}
+            function _ownersSlot() ->s { s:=2}
+            function _balancesSlot() ->s { s:=3}
+            function _tokenApprovalsSlot() ->s { s:=4}
+            function _operatorApprovalsSlot() ->s { s:=5}
+
+            function _mapping(key,slot) -> s {
+                //keccak256 p n
+                mstore(0,key)
+                mstore(0x20,slot)
+                s := keccak256(0,0x40)
+            }
+            
+            function selector() -> sel{
+                sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
+            }
+
+            function require(condition) {
+                if iszero(condition) { revert(0,0) }
+            }
+            
+            function emitTransfer(from,to,tokenId){
+                let sigHash := 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+                
+                emitEvent(sigHash,from,to,tokenId)
+            }
+            function emitApproval(owner,to,tokenId){
+                let sigHash := 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+
+                emitEvent(sigHash,owner,to,tokenId)
+            }
+            function emitEvent(sigHash, indexed1, indexed2, nonIndexed){
+                mstore(0,nonIndexed)
+                log3(0,0x20,sigHash,indexed1,indexed2)
+            }
+
+            function revertERC721InvalidOwner(owner){
+                mstore(0,0x89c62b64)
+                mstore(0x20,owner)
+                revert(0x1c,0x24)
+            }
+
+            function revertERC721NonexistentToken(tokenId){
+                mstore(0,0x7e273289)
+                mstore(0x20,tokenId)
+                revert(0x1c,0x24)
+            }
+
+            function revertERC721InsufficientApproval(spender,tokenId){
+                mstore(0,0x177e802f)
+                mstore(0x20,spender)
+                mstore(0x40,tokenId)
+                revert(0x1c,0x44)
+            }
+
+            function revertERC721InvalidApprover(approver){
+                mstore(0,0x177e802f)
+                mstore(0x20,approver)
+                revert(0x1c,0x24)
+            }
+                        
             function decodeAddress(offset)-> v{
                 v := decodeUint(offset)
                 if iszero(iszero(and(v,not(0xffffffffffffffffffffffffffffffffffffffff)))){
@@ -48,54 +205,7 @@ object "ERC721"{
                 return(0,0x20)
             }
 
-            function _requireOwned(tokenId) -> owner{
-                owner := _ownerOf(tokenId)
-                if iszero(owner) {
-                    revertERC721NonexistentToken(tokenId)
-                }
-            }
-            function ownerOf(tokenId){
-               let owner := _ownerOf(tokenId)             
-               returnUint(owner)
-            }
-            
-            function _ownerOf(tokenId) -> owner{
-                owner := sload(_mapping(_ownersSlot(),tokenId))                
-            }
 
-            function _nameSlot() ->s { s:=0}
-            function _symbolSlot() ->s { s:=1}
-            function _ownersSlot() ->s { s:=2}
-            function _balancesSlot() ->s { s:=3}
-            function _tokenApprovalsSlot() ->s { s:=4}
-            function _operatorApprovalsSlot() ->s { s:=5}
-
-            function _mapping(slot,key) -> s {
-                //keccak256 p n
-                mstore(0,key)
-                mstore(0x20,slot)
-                s := keccak256(0,0x40)
-            }
-            
-            function selector() -> sel{
-                sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
-            }
-
-            function require(condition) {
-                if iszero(condition) { revert(0,0) }
-            }
-
-            function revertERC721InvalidOwner(owner){
-                mstore(0,0x89c62b64)
-                mstore(0x20,owner)
-                revert(0x1c,0x24)
-            }
-
-            function revertERC721NonexistentToken(tokenId){
-                mstore(0,0x7e273289)
-                mstore(0x20,tokenId)
-                revert(0x1c,0x24)
-            }
         }
     }
 }
