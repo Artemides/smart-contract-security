@@ -21,8 +21,6 @@ object "ERC721"{
             
             function balanceOf(owner)->bal{
                 bal:=sload(_mapping(_ownersSlot(),owner))
-                mstore(0,bal)
-                return(0,0)
             }
             
             function decodeAddress(offset)-> v{
