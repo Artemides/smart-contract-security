@@ -17,12 +17,38 @@ object "ERC721"{
             }
             case 0xe985e9c5 /*isApprovedForAll(address, address )*/{
                 //read args
-                let approved:= isApprovedForAll();
+                let owner := decodeAddress(0)
+                let operator := decodeAddress(1)
+                let approved := isApprovedForAll(owner,operator)
+                if approved {
+                    returnUint(1)
+                }
+                
+                returnUint(0)
+            }
+            case 0x40c10f19 {
+                mint()
             }
             default {
                 revert(0,0)
             }
-            
+
+            function mint(){
+               let to := decodeAddress(0)
+               let tokenId := decodeUint(1)
+               _mint(to,tokenId)
+            }
+            function _mint(to,tokenId){
+                if iszero(to){
+                    revertERC721InvalidReceiver(0x0)
+                }
+
+                let owner := _update(to,tokenId,0x0)
+                if not(eq(owner,0x0)) {
+                    revertERC721InvalidSender(0x0)
+                }
+            }
+
             function balanceOf(owner)->bal{
                 if iszero(owner) {
                     revertERC721InvalidOwner(owner)
@@ -44,7 +70,7 @@ object "ERC721"{
             }
 
             function _ownerOf(tokenId) -> owner{
-                owner := sload(_mapping(tokenId,_ownersSlot())                
+                owner := sload(_mapping(tokenId,_ownersSlot()))                
             }
 
             function _update(to,tokenId,auth) -> from{
@@ -57,13 +83,13 @@ object "ERC721"{
                     _approve(0x0,tokenId,0x0,0x0)
                     let slot := _mapping(from,_balancesSlot())
                     let prev := sload(slot)
-                    sstore(slot, prev - 1)
+                    sstore(slot, sub(prev,1))
                 }
 
                 if not(iszero(to)){
                     let slot := _mapping(to,_balancesSlot())
                     let prev := sload(slot)
-                    sstore(slot, prev + 1)
+                    sstore(slot,add(prev,1))
                 }
 
                 let slot := _mapping(tokenId,_ownersSlot())
@@ -71,18 +97,16 @@ object "ERC721"{
                 emitTransfer(from,to,tokenId)
                 //return
             }
-            function _approve(to, tokenId, auth){
-                _approve(to, tokenId, auth, 0x1)
-            }
-            function _approve(to, tokenId, auth, emitEvent){
-                if or(emitEvent,not(iszero(auth))){
+      
+            function _approve(to, tokenId, auth, emit){
+                if or(emit,not(iszero(auth))){
                     let owner := _requireOwned(tokenId)
 
                     if and(not(iszero(auth)), and(not(eq(owner,auth)), not(isApprovedForAll(owner,auth)))){
                         revertERC721InvalidApprover(auth)
                     }
 
-                    if emitEvent {
+                    if emit {
                         emitApproval(owner,to,tokenId)
                     }
                 }
@@ -95,9 +119,9 @@ object "ERC721"{
                 if iszero(_isAuthorized(owner,spender,tokenId)){
                     if iszero(owner){
                         revertERC721NonexistentToken(owner)
-                    }else{
-                        revertERC721InsufficientApproval(spender,tokenId)
                     }
+
+                    revertERC721InsufficientApproval(spender,tokenId)   
                 }
             }
 
@@ -106,8 +130,8 @@ object "ERC721"{
                 let nonZeroSpender := not(iszero(spender))
                 let selfAuth := eq(owner, spender)
                 let approvedForAll := isApprovedForAll(owner, spender)
-                let spenderApproved = eq(_getApproved(tokenId), spender)
-                authorized := and(nonZeroSpender, or(selfAuth,or(approvedForAll, spenderApproved)));
+                let spenderApproved := eq(_getApproved(tokenId), spender)
+                authorized := and(nonZeroSpender, or(selfAuth,or(approvedForAll, spenderApproved)))
 
             }
 
@@ -179,8 +203,19 @@ object "ERC721"{
             }
 
             function revertERC721InvalidApprover(approver){
-                mstore(0,0x177e802f)
+                mstore(0,0xa9fbf51f)
                 mstore(0x20,approver)
+                revert(0x1c,0x24)
+            }
+
+            function revertERC721InvalidReceiver(receiver){
+                mstore(0,0x64a0ae92)
+                mstore(0x20,receiver)
+                revert(0x1c,0x24)
+            }
+            function revertERC721InvalidSender(sender){
+                mstore(0,0x73c6ac6e)
+                mstore(0x20,sender)
                 revert(0x1c,0x24)
             }
                         
@@ -189,7 +224,7 @@ object "ERC721"{
                 if iszero(iszero(and(v,not(0xffffffffffffffffffffffffffffffffffffffff)))){
                     revert(0,0)
                 }            
-            }
+            }   
 
             function decodeUint(offset) -> v {
                 let pos := add(4,mul(offset,0x20))
