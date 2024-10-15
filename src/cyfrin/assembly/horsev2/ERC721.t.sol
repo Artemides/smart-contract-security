@@ -11,6 +11,7 @@ contract ERC721Test is Test {
     address user = makeAddr("user");
 
     error ERC721InvalidOwner(address owner);
+    error ERC721NonexistentToken(uint256);
 
     function run() public {
         setUp();

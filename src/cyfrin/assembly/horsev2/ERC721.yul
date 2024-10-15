@@ -48,6 +48,21 @@ object "ERC721"{
                 return(0,0x20)
             }
 
+            function _requireOwned(tokenId) -> owner{
+                owner := _ownerOf(tokenId)
+                if iszero(owner) {
+                    revertERC721NonexistentToken(tokenId)
+                }
+            }
+            function ownerOf(tokenId){
+               let owner := _ownerOf(tokenId)             
+               returnUint(owner)
+            }
+            
+            function _ownerOf(tokenId) -> owner{
+                owner := sload(_mapping(_ownersSlot(),tokenId))                
+            }
+
             function _nameSlot() ->s { s:=0}
             function _symbolSlot() ->s { s:=1}
             function _ownersSlot() ->s { s:=2}
@@ -73,6 +88,12 @@ object "ERC721"{
             function revertERC721InvalidOwner(owner){
                 mstore(0,0x89c62b64)
                 mstore(0x20,owner)
+                revert(0x1c,0x24)
+            }
+
+            function revertERC721NonexistentToken(tokenId){
+                mstore(0,0x7e273289)
+                mstore(0x20,tokenId)
                 revert(0x1c,0x24)
             }
         }
