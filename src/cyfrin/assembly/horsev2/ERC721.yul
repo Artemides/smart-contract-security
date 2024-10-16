@@ -29,6 +29,10 @@ object "ERC721"{
             case 0x40c10f19 {
                 mint()
             }
+            case 0x6352211e /*ownerOf(uint256)*/{
+                ownerOf()
+            }
+            
             default {
                 revert(0,0)
             }
@@ -37,6 +41,12 @@ object "ERC721"{
                let to := decodeAddress(0)
                let tokenId := decodeUint(1)
                _mint(to,tokenId)
+            }
+
+            function ownerOf(){
+                let tokenId :=decodeUint(0)
+                let owner := _requireOwned(tokenId)
+                returnUint(owner)
             }
             function _mint(to,tokenId){
                 if iszero(to){
@@ -55,11 +65,6 @@ object "ERC721"{
                 }
 
                 bal := sload(_mapping(owner,_ownersSlot()))
-            }
-
-            function ownerOf(tokenId){
-               let owner := _ownerOf(tokenId)             
-               returnUint(owner)
             }
 
             function _requireOwned(tokenId) -> owner{
