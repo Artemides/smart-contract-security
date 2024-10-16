@@ -9,28 +9,37 @@ object "ERC721"{
             /** Function Hub/Switcher/Disptacher */
 
             switch selector() 
-            /*supportsInterface(bytes4)*/
+            /** supportsInterface(bytes4)*/
             case 0x01ffc9a7 {
             }
-            /*balanceOf(address)*/ 
+            /** balanceOf(address)*/ 
             case 0x70a08231 {
                 balanceOfWrapper()
             }
-            /*isApprovedForAll(address, address )*/
+            /** isApprovedForAll(address, address )*/
             case 0xe985e9c5 {
                 isApprovedForAllWrapper()
             }
-            /**mint(address,uint256)*/ 
+            /** mint(address,uint256)*/ 
             case 0x40c10f19 { 
                 mintWrapper() 
             }
-            /*ownerOf(uint256)*/
+            /** ownerOf(uint256)*/
             case 0x6352211e { 
                 ownerOfWrapper() 
+            }
+            /** getApproved(uint256)*/
+            case 0x081812fc {
+                getApprovedWrapper()
+            }
+            /** approve(address,uint256) */
+            case 0x095ea7b3 {
+                approveWrapper()
             }
             default { revert(0,0) }
 
             /** Function Wrappers / Public */
+            
             function balanceOfWrapper(){
                 let bal := _balanceOf(decodeAddress(0))
                 returnUint(bal)
@@ -57,8 +66,21 @@ object "ERC721"{
                 let tokenId :=decodeUint(0)
                 let owner := _requireOwned(tokenId)
                 returnUint(owner)
+            }      
+
+            function getApprovedWrapper(){
+                let tokenId := decodeUint(0)
+                let owner := _requireOwned(tokenId)
+                let approved := _getApproved(tokenId)
+                returnUint(approved)
             }
-            
+
+            function approveWrapper(){
+                let to := decodeAddress(0)
+                let tokenId := decodeUint(1)
+                _approve(to, tokenId, caller(), 0x1)
+            }
+
             /** Internal Function  */
             function _mint(to,tokenId){
                 if iszero(to){
