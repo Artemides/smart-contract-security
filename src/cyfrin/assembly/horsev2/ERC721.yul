@@ -6,48 +6,60 @@ object "ERC721"{
     }
     object "runtime" {
         code {
-            
+            /** Function Hub/Switcher/Disptacher */
+
             switch selector() 
-            case 0x01ffc9a7 /*supportsInterface(bytes4 interfaceId)*/{
-                // 
+            /*supportsInterface(bytes4)*/
+            case 0x01ffc9a7 {
             }
-            case 0x70a08231 /*balanceOf(address owner)*/{
-                let bal := balanceOf(decodeAddress(0))
+            /*balanceOf(address)*/ 
+            case 0x70a08231 {
+                balanceOfWrapper()
+            }
+            /*isApprovedForAll(address, address )*/
+            case 0xe985e9c5 {
+                isApprovedForAllWrapper()
+            }
+            /**mint(address,uint256)*/ 
+            case 0x40c10f19 { 
+                mintWrapper() 
+            }
+            /*ownerOf(uint256)*/
+            case 0x6352211e { 
+                ownerOfWrapper() 
+            }
+            default { revert(0,0) }
+
+            /** Function Wrappers / Public */
+            function balanceOfWrapper(){
+                let bal := _balanceOf(decodeAddress(0))
                 returnUint(bal)
             }
-            case 0xe985e9c5 /*isApprovedForAll(address, address )*/{
-                //read args
+
+            function mintWrapper(){
+               let to := decodeAddress(0)
+               let tokenId := decodeUint(1)
+               _mint(to,tokenId)
+            }
+
+            function isApprovedForAllWrapper(){
                 let owner := decodeAddress(0)
                 let operator := decodeAddress(1)
                 let approved := isApprovedForAll(owner,operator)
                 if approved {
                     returnUint(1)
                 }
-                
+        
                 returnUint(0)
             }
-            case 0x40c10f19 {
-                mint()
-            }
-            case 0x6352211e /*ownerOf(uint256)*/{
-                ownerOf()
-            }
-            
-            default {
-                revert(0,0)
-            }
 
-            function mint(){
-               let to := decodeAddress(0)
-               let tokenId := decodeUint(1)
-               _mint(to,tokenId)
-            }
-
-            function ownerOf(){
+            function ownerOfWrapper(){
                 let tokenId :=decodeUint(0)
                 let owner := _requireOwned(tokenId)
                 returnUint(owner)
             }
+            
+            /** Internal Function  */
             function _mint(to,tokenId){
                 if iszero(to){
                     revertERC721InvalidReceiver(0x0)
@@ -59,7 +71,7 @@ object "ERC721"{
                 }
             }
 
-            function balanceOf(owner)->bal{
+            function _balanceOf(owner)->bal{
                 if iszero(owner) {
                     revertERC721InvalidOwner(owner)
                 }
@@ -131,7 +143,6 @@ object "ERC721"{
             }
 
             function _isAuthorized(owner,spender,tokenId) -> authorized{
-                // 0 -> 1 -> 0 
                 let nonZeroSpender := notZeroAddress(spender)
                 let selfAuth := eq(owner, spender)
                 let approvedForAll := isApprovedForAll(owner, spender)
@@ -141,7 +152,6 @@ object "ERC721"{
             }
 
             function isApprovedForAll(owner, operator) -> approved {
-                //keccak(operator, keccak(owner.i))
                 let slot := _mapping(operator,_mapping(owner,_operatorApprovalsSlot()))
                 approved := sload(slot)
             }
@@ -150,28 +160,17 @@ object "ERC721"{
                 let slot := _mapping(tokenId,_tokenApprovalsSlot())
                 approved := sload(slot)
             }
-            
-            function _nameSlot() ->s { s:=0}
-            function _symbolSlot() ->s { s:=1}
-            function _ownersSlot() ->s { s:=2}
-            function _balancesSlot() ->s { s:=3}
-            function _tokenApprovalsSlot() ->s { s:=4}
-            function _operatorApprovalsSlot() ->s { s:=5}
 
-            function _mapping(key,slot) -> s {
-                //keccak256 p n
-                mstore(0,key)
-                mstore(0x20,slot)
-                s := keccak256(0,0x40)
-            }
+            /** Contract Layout  */
             
-            function selector() -> sel{
-                sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
-            }
+            function _nameSlot() ->s { s:=0 }
+            function _symbolSlot() ->s { s:=1 }
+            function _ownersSlot() ->s { s:=2 }
+            function _balancesSlot() ->s { s:=3 }
+            function _tokenApprovalsSlot() ->s { s:=4 }
+            function _operatorApprovalsSlot() ->s { s:=5 } 
 
-            function require(condition) {
-                if iszero(condition) { revert(0,0) }
-            }
+             /** Contract Events  */
             
             function emitTransfer(from,to,tokenId){
                 let sigHash := 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
@@ -187,6 +186,8 @@ object "ERC721"{
                 mstore(0,nonIndexed)
                 log3(0,0x20,sigHash,indexed1,indexed2)
             }
+
+            /** Contract Errors  */
 
             function revertERC721InvalidOwner(owner){
                 mstore(0,0x89c62b64)
@@ -224,6 +225,21 @@ object "ERC721"{
                 revert(0x1c,0x24)
             }
                         
+            /** Utilities  */
+            function _mapping(key,slot) -> s {
+                mstore(0,key)
+                mstore(0x20,slot)
+                s := keccak256(0,0x40)
+            }
+            
+            function selector() -> sel{
+                sel := div(calldataload(0),0x100000000000000000000000000000000000000000000000000000000)
+            }
+
+            function require(condition) {
+                if iszero(condition) { revert(0,0) }
+            }
+
             function decodeAddress(offset)-> v{
                 v := decodeUint(offset)
                 if iszero(iszero(and(v,not(0xffffffffffffffffffffffffffffffffffffffff)))){
