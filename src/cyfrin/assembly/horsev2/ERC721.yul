@@ -36,10 +36,15 @@ object "ERC721"{
             case 0x095ea7b3 {
                 approveWrapper()
             }
+            /** setApprovalForAll(address,bool) */
+            case 0xa22cb465{
+                setApprovalForAllWrapper()
+            }
+
             default { revert(0,0) }
 
             /** Function Wrappers / Public */
-            
+
             function balanceOfWrapper(){
                 let bal := _balanceOf(decodeAddress(0))
                 returnUint(bal)
@@ -79,6 +84,12 @@ object "ERC721"{
                 let to := decodeAddress(0)
                 let tokenId := decodeUint(1)
                 _approve(to, tokenId, caller(), 0x1)
+            }
+
+            function setApprovalForAllWrapper(){
+                let operator := decodeAddress(0)
+                let approved := decodeBool(1)
+                _setApprovalForAll(caller(), operator, approved)
             }
 
             /** Internal Function  */
@@ -183,6 +194,16 @@ object "ERC721"{
                 approved := sload(slot)
             }
 
+            function _setApprovalForAll(owner, operator, approved){
+                if iszero(operator){
+                    revertERC721InvalidOperator(operator)
+                }
+
+               let slot := _mapping(operator,_mapping(owner,_operatorApprovalsSlot()))
+               sstore(slot,approved)
+               emitApprovalForAll(owner,operator,approved)
+            }
+
             /** Contract Layout  */
             
             function _nameSlot() ->s { s:=0 }
@@ -204,6 +225,13 @@ object "ERC721"{
 
                 emitEvent(sigHash,owner,to,tokenId)
             }
+
+            function emitApprovalForAll(owner,operator,approved){
+                let sigHash := 0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31
+
+                emitEvent(sigHash,owner,operator,approved)
+            }
+            
             function emitEvent(sigHash, indexed1, indexed2, nonIndexed){
                 mstore(0,nonIndexed)
                 log3(0,0x20,sigHash,indexed1,indexed2)
@@ -246,7 +274,13 @@ object "ERC721"{
                 mstore(0x20,sender)
                 revert(0x1c,0x24)
             }
-                        
+
+            function revertERC721InvalidOperator(operator){
+                mstore(0,0x5b08ba18)
+                mstore(0x20,operator)
+                revert(0x1c,0x24)
+            }
+
             /** Utilities  */
             function _mapping(key,slot) -> s {
                 mstore(0,key)
@@ -276,6 +310,12 @@ object "ERC721"{
                 }
 
                 v:=calldataload(pos)
+            }
+            function decodeBool(offset) -> v {
+                v := decodeUint(offset)
+                if gt(v,1){
+                    revert(0,0)
+                }
             }
 
             function returnUint(v){
