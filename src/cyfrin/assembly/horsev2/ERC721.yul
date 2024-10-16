@@ -43,8 +43,8 @@ object "ERC721"{
                     revertERC721InvalidReceiver(0x0)
                 }
 
-                let owner := _update(to,tokenId,0x0)
-                if not(eq(owner,0x0)) {
+                let oldOwner := _update(to,tokenId,0x0)
+                if notZeroAddress(oldOwner) {
                     revertERC721InvalidSender(0x0)
                 }
             }
@@ -75,18 +75,18 @@ object "ERC721"{
 
             function _update(to,tokenId,auth) -> from{
                 from := _ownerOf(tokenId)
-                if eq(iszero(auth),0) {
+                if notZeroAddress(auth){
                     _checkAuthorized(from,auth,tokenId)
                 }
 
-                if not(iszero(from)){
+                if notZeroAddress(from){
                     _approve(0x0,tokenId,0x0,0x0)
                     let slot := _mapping(from,_balancesSlot())
                     let prev := sload(slot)
                     sstore(slot, sub(prev,1))
                 }
 
-                if not(iszero(to)){
+                if notZeroAddress(to){
                     let slot := _mapping(to,_balancesSlot())
                     let prev := sload(slot)
                     sstore(slot,add(prev,1))
@@ -99,10 +99,10 @@ object "ERC721"{
             }
       
             function _approve(to, tokenId, auth, emit){
-                if or(emit,not(iszero(auth))){
+                if or(emit, notZeroAddress(auth)){
                     let owner := _requireOwned(tokenId)
 
-                    if and(not(iszero(auth)), and(not(eq(owner,auth)), not(isApprovedForAll(owner,auth)))){
+                    if and(notZeroAddress(auth), and(not(eq(owner,auth)), not(isApprovedForAll(owner,auth)))){
                         revertERC721InvalidApprover(auth)
                     }
 
@@ -118,7 +118,7 @@ object "ERC721"{
             function _checkAuthorized(owner,spender,tokenId){
                 if iszero(_isAuthorized(owner,spender,tokenId)){
                     if iszero(owner){
-                        revertERC721NonexistentToken(owner)
+                        revertERC721NonexistentToken(tokenId)
                     }
 
                     revertERC721InsufficientApproval(spender,tokenId)   
@@ -127,7 +127,7 @@ object "ERC721"{
 
             function _isAuthorized(owner,spender,tokenId) -> authorized{
                 // 0 -> 1 -> 0 
-                let nonZeroSpender := not(iszero(spender))
+                let nonZeroSpender := notZeroAddress(spender)
                 let selfAuth := eq(owner, spender)
                 let approvedForAll := isApprovedForAll(owner, spender)
                 let spenderApproved := eq(_getApproved(tokenId), spender)
@@ -240,6 +240,19 @@ object "ERC721"{
                 return(0,0x20)
             }
 
+            function ne(a,b) -> bool {
+                bool := true
+                if eq(a,b){
+                    bool := false
+                }
+            } 
+
+            function notZeroAddress(addr) -> b {
+                b := true
+                if eq(addr,0x0){
+                    b := false
+                }
+            }
 
         }
     }
