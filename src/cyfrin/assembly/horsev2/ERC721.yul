@@ -232,7 +232,7 @@ object "ERC721"{
                emitApprovalForAll(owner,operator,approved)
             }
             function safeTransferFrom(from,to,tokenId){
-                // _transferFrom(from,to,tokenId)
+                _transferFrom(from,to,tokenId)
                 _checkOnERC721Received(from,to,tokenId)
             }
             function _transferFrom(from, to, tokenId){
@@ -247,7 +247,7 @@ object "ERC721"{
    
             }
             function _checkOnERC721Received(from, to, tokenId){
-                if eq(extcodesize(to), 0){
+                if gt(extcodesize(to), 0){
                     
                     let pointer := mload(0x40)
                     mstore(pointer, 0x150b7a02)
@@ -263,12 +263,14 @@ object "ERC721"{
                             gas(), 
                             to, 
                             0, 
-                            add(pointer,0x1c),
+                            add(pointer, 0x1c),
                             size, 
                             0, 
                             0x20
                         )
 
+                    //restore mem pointer, crafted call params won't be useful then
+                    mstore(0x40, pointer)
                     if iszero(success) {
                         if iszero(returndatasize()){
                             revertERC721InvalidReceiver(to)
@@ -277,9 +279,10 @@ object "ERC721"{
                         revert(0x20, returndatasize())
                     }
 
-                    let sel := mload(0)
+                    returndatacopy(0, 0, returndatasize())
 
-                    if ne(sel,0x150b7a02){
+                    let response := mload(0)
+                    if ne(response,shl(224,0x150b7a02)){
                         revertERC721InvalidReceiver(to)
                     }
                 }
