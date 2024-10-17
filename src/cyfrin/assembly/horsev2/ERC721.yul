@@ -40,7 +40,14 @@ object "ERC721"{
             case 0xa22cb465{
                 setApprovalForAllWrapper()
             }
-
+            /** transferFrom(address,address,uint256) */
+            case 0x23b872dd{
+                safeTransferFromWrapper()
+            }
+            /** safeTransferFrom(address, address, uint256, bytes) */
+            case 0xe2ae85b0{
+                safeTransferFromWithDataWrapper()
+            }
             default { revert(0,0) }
 
             /** Function Wrappers / Public */
@@ -90,6 +97,28 @@ object "ERC721"{
                 let operator := decodeAddress(0)
                 let approved := decodeBool(1)
                 _setApprovalForAll(caller(), operator, approved)
+            }
+
+            function transferFromWrapper(){
+                let from := decodeAddress(0)
+                let to := decodeAddress(1)
+                let tokenId := decodeUint(2)
+                _transferFrom(from, to, tokenId)
+            }
+            
+            function safeTransferFromWrapper(){
+                let from := decodeAddress(0)
+                let to := decodeAddress(1)
+                let tokenId := decodeAddress(2)
+                safeTransferFrom(from,to,tokenId,0x0)
+            }
+            function safeTransferFromWithDataWrapper(){
+                let from := decodeAddress(0)
+                let to := decodeAddress(1)
+                let tokenId := decodeAddress(2)
+                let pointer, size  := decodeBytes(3)
+                let data := mload(pointer,size)
+                safeTransferFrom(from,to,tokenId,data)
             }
 
             /** Internal Function  */
@@ -203,7 +232,59 @@ object "ERC721"{
                sstore(slot,approved)
                emitApprovalForAll(owner,operator,approved)
             }
+            function safeTransferFrom(from,to,tokenId,data){
+                _transferFrom(from,to,tokenId)
+                _checkOnERC721Received(from,to,tokenId,data)
+            }
+            function _transferFrom(from, to, tokenId){
+                if iszero(to){
+                    revertERC721InvalidReceiver(to)
+                }
 
+                let prevOwner := _update(to,tokenId,caller())
+                if ne(prevOwner, from){
+                    revertERC721IncorrectOwner(from,tokenId,prevOwner)
+                }
+   
+            }
+            function _checkOnERC721Received(from, to, tokenId, data){
+                if gt(extcodesize(to), 0){
+                    
+                    let pointer := mload(0x40)
+                    mstore(pointer, 0x150b7a02)
+                    mstore(add(pointer, 0x20), caller())
+                    mstore(add(pointer, 0x40), from)
+                    mstore(add(pointer, 0x60), tokenId)
+                    mstore(add(pointer, 0x80), add(0x60,0x4))
+                    mstore(add(pointer, 0xa0), data)
+
+                    let size := mload(add(pointer, 0xa0))
+                    let success := call(
+                            gas(), 
+                            to, 
+                            0, 
+                            pointer,
+                            add(0xa0,size), 
+                            0, 
+                            0x20
+                        )
+
+                    if iszero(success) {
+                        if iszero(returndatasize()){
+                            revertERC721InvalidReceiver(to)
+                        }
+
+                        revert(0x20, returndatasize())
+                    }
+
+                    let sel := mload(0)
+
+                    if ne(sel,0x150b7a02){
+                        revertERC721InvalidReceiver(to)
+                    }
+                }
+            }
+     
             /** Contract Layout  */
             
             function _nameSlot() ->s { s:=0 }
@@ -280,7 +361,14 @@ object "ERC721"{
                 mstore(0x20,operator)
                 revert(0x1c,0x24)
             }
-
+            
+            function revertERC721IncorrectOwner(from, tokenId, owner){
+                mstore(0,0x5b08ba18)
+                mstore(0x20,from)
+                mstore(0x40,tokenId)
+                mstore(0x60,owner)
+                revert(0x1c,0x64)
+            }
             /** Utilities  */
             function _mapping(key,slot) -> s {
                 mstore(0,key)
@@ -316,6 +404,29 @@ object "ERC721"{
                 if gt(v,1){
                     revert(0,0)
                 }
+            }
+
+            function decodeBytes(offset) -> pointer, size {
+                pointer := mload(0x40)
+                let pos := add(4,mul(offset,0x20))
+                let lenPos := add(pos,0x20)
+                let bytesLen := calldataload(lenPos)
+                
+                size := add(0x20, bytesLen)
+
+                if gt(calldatasize(),add(pos,add(size,0x20))){
+                    revert(0,0)
+                }
+                
+                calldatacopy(pointer,lenPos,size)
+
+                let module := mod(size, 0x20)
+                let memPointer := add(pointer, 0x20)
+                if gt(module,0){
+                    memPointer := add(memPointer, module)
+                }
+
+                mstore(0x40,memPointer)
             }
 
             function returnUint(v){
