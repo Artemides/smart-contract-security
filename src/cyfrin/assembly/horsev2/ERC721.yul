@@ -7,6 +7,7 @@ object "ERC721"{
     object "runtime" {
         code {
             /** Function Hub/Switcher/Disptacher */
+            mstore(0x40,0x80)
 
             switch selector() 
             /** supportsInterface(bytes4)*/
@@ -44,8 +45,8 @@ object "ERC721"{
             case 0x23b872dd{
                 safeTransferFromWrapper()
             }
-            /** safeTransferFrom(address, address, uint256, bytes) */
-            case 0xe2ae85b0{
+            /** safeTransferFrom(address,addressuint256,bytes) */
+            case 0xb88d4fde{
                 safeTransferFromWithDataWrapper()
             }
             default { revert(0,0) }
@@ -110,15 +111,13 @@ object "ERC721"{
                 let from := decodeAddress(0)
                 let to := decodeAddress(1)
                 let tokenId := decodeAddress(2)
-                safeTransferFrom(from,to,tokenId,0x0)
+                safeTransferFrom(from,to,tokenId)
             }
             function safeTransferFromWithDataWrapper(){
                 let from := decodeAddress(0)
                 let to := decodeAddress(1)
                 let tokenId := decodeAddress(2)
-                let pointer, size  := decodeBytes(3)
-                let data := mload(pointer,size)
-                safeTransferFrom(from,to,tokenId,data)
+                safeTransferFrom(from,to,tokenId)
             }
 
             /** Internal Function  */
@@ -232,9 +231,9 @@ object "ERC721"{
                sstore(slot,approved)
                emitApprovalForAll(owner,operator,approved)
             }
-            function safeTransferFrom(from,to,tokenId,data){
-                _transferFrom(from,to,tokenId)
-                _checkOnERC721Received(from,to,tokenId,data)
+            function safeTransferFrom(from,to,tokenId){
+                // _transferFrom(from,to,tokenId)
+                _checkOnERC721Received(from,to,tokenId)
             }
             function _transferFrom(from, to, tokenId){
                 if iszero(to){
@@ -247,24 +246,25 @@ object "ERC721"{
                 }
    
             }
-            function _checkOnERC721Received(from, to, tokenId, data){
-                if gt(extcodesize(to), 0){
+            function _checkOnERC721Received(from, to, tokenId){
+                if eq(extcodesize(to), 0){
                     
                     let pointer := mload(0x40)
                     mstore(pointer, 0x150b7a02)
                     mstore(add(pointer, 0x20), caller())
                     mstore(add(pointer, 0x40), from)
                     mstore(add(pointer, 0x60), tokenId)
-                    mstore(add(pointer, 0x80), add(0x60,0x4))
-                    mstore(add(pointer, 0xa0), data)
+                    mstore(add(pointer, 0x80), 0x80)
+                    mstore(0x40, add(pointer, 0xa0))
 
-                    let size := mload(add(pointer, 0xa0))
+                    let bytesAt, bytesSize := decodeBytes(3)
+                    let size := add(add(4, mul(4, 0x20)), bytesSize)
                     let success := call(
                             gas(), 
                             to, 
                             0, 
-                            pointer,
-                            add(0xa0,size), 
+                            add(pointer,0x1c),
+                            size, 
                             0, 
                             0x20
                         )
@@ -414,16 +414,16 @@ object "ERC721"{
                 
                 size := add(0x20, bytesLen)
 
-                if gt(calldatasize(),add(pos,add(size,0x20))){
-                    revert(0,0)
+                if lt(calldatasize(),add(pos,add(size,0x20))){
+                     revert(0,0)
                 }
                 
-                calldatacopy(pointer,lenPos,size)
+                calldatacopy(pointer, lenPos, size)
 
                 let module := mod(size, 0x20)
-                let memPointer := add(pointer, 0x20)
+                let memPointer := add(pointer, size)
                 if gt(module,0){
-                    memPointer := add(memPointer, module)
+                    memPointer := add(memPointer, sub(0x20, module))
                 }
 
                 mstore(0x40,memPointer)
