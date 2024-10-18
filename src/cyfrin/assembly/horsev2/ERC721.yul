@@ -45,7 +45,7 @@ object "ERC721"{
             case 0x42842e0e {
                 safeTransferFromWrapper()
             }
-            /** safeTransferFrom(address,addressuint256,bytes) */
+            /** safeTransferFrom(address,address,uint256,bytes) */
             case 0xb88d4fde {
                 safeTransferFromWithDataWrapper()
             }
@@ -56,6 +56,10 @@ object "ERC721"{
             /** safeMint(address,uint256,bytes) */
             case 0x8832e6e3{
                 safeMintWithDataWrapper()
+            }
+            /** burn(uint256) */
+            case 0x42966c68 {
+                burnWrapper()
             }
             default { revert(0,0) }
 
@@ -136,9 +140,15 @@ object "ERC721"{
 
             function safeMintWithDataWrapper(){
                 let from := decodeAddress(0)
-                let tokenId := decodeAddress(1)
+                let tokenId := decodeUint(1)
                 _safeMint(from, tokenId,0x1)
             }
+
+            function burnWrapper(){
+                let tokenId := decodeUint(0)
+                _burn(tokenId)
+            }
+
             /** Internal Function  */
             function _mint(to,tokenId){
                 if iszero(to){
@@ -270,6 +280,13 @@ object "ERC721"{
             function _safeMint(to, tokenId, attach){
                 _mint(to,tokenId)
                 _checkOnERC721Received(0x0, to, tokenId, attach)
+            }
+
+            function _burn(tokenId){
+                let prevOwner := _update(0x0, tokenId, 0x0)
+                if iszero(prevOwner){
+                    revertERC721NonexistentToken(tokenId)
+                }
             }
 
             function _checkOnERC721Received(from, to, tokenId,attach){
