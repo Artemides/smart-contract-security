@@ -8,25 +8,18 @@ object "ERC721"{
         datacopy(0,dataoffset("runtime"),datasize("runtime"))
         return(0,datasize("runtime"))
 
-        function findLen(offset) -> at {
-            let codelen := datasize("ERC721")
-            at := codelen
-            if gt(offset,0){
-                let pointer := mload(0x40)
-                for { let i := 0 } lt(i,offset) { i := add(i, 1)} {
-                    datacopy(pointer, at, 0x20)
-                    let len := mload(0)
-                    at := add(at, add(0x20, len))
-                }
-            }
-        }
         function decodeString(offset, s_slot){
             let codelen := datasize("ERC721")
-            let str_len_at := findLen(offset)
+            let str_offset_at := add(codelen, mul(offset,0x20))
             let pointer := mload(0x40)
     
+            datacopy(pointer, str_offset_at, 0x20)
+            let str_offset := mload(pointer)
+
+            let str_len_at :=  add(codelen, str_offset)
             datacopy(pointer, str_len_at, 0x20)
             let str_len := mload(pointer)
+            
             pointer := add(pointer,0x20)
             datacopy(pointer, add(str_len_at, 0x20), str_len)
                        
