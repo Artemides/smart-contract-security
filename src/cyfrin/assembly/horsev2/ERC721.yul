@@ -135,9 +135,10 @@ object "ERC721"{
             }
 
             function symbolWrapper(){
-                let  nameAt := handleStorageString(_symbolSlot())
-                let  nameLen := mload(nameAt)
-                return(nameAt,add(0x20, nameLen))
+                let symbolAt := handleStorageString(_symbolSlot())
+                let symbolLen := make0x20Compatible(mload(symbolAt))
+                mstore(0x60, 0x20)
+                return(0x60, add(0x40, symbolLen))
             }
 
             function balanceOfWrapper(){
