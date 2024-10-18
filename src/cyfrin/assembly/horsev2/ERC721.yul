@@ -41,8 +41,8 @@ object "ERC721"{
             case 0xa22cb465{
                 setApprovalForAllWrapper()
             }
-            /** transferFrom(address,address,uint256) */
-            case 0x23b872dd{
+            /** safeTransferFrom(address,address,uint256) */
+            case 0x42842e0e{
                 safeTransferFromWrapper()
             }
             /** safeTransferFrom(address,addressuint256,bytes) */
@@ -111,13 +111,13 @@ object "ERC721"{
                 let from := decodeAddress(0)
                 let to := decodeAddress(1)
                 let tokenId := decodeAddress(2)
-                safeTransferFrom(from,to,tokenId)
+                safeTransferFrom(from,to,tokenId,0)
             }
             function safeTransferFromWithDataWrapper(){
                 let from := decodeAddress(0)
                 let to := decodeAddress(1)
                 let tokenId := decodeAddress(2)
-                safeTransferFrom(from,to,tokenId)
+                safeTransferFrom(from,to,tokenId,0x1)
             }
 
             /** Internal Function  */
@@ -231,9 +231,9 @@ object "ERC721"{
                sstore(slot,approved)
                emitApprovalForAll(owner,operator,approved)
             }
-            function safeTransferFrom(from,to,tokenId){
+            function safeTransferFrom(from,to,tokenId,attach){
                 _transferFrom(from,to,tokenId)
-                _checkOnERC721Received(from,to,tokenId)
+                _checkOnERC721Received(from,to,tokenId,attach)
             }
             function _transferFrom(from, to, tokenId){
                 if iszero(to){
@@ -246,7 +246,7 @@ object "ERC721"{
                 }
    
             }
-            function _checkOnERC721Received(from, to, tokenId){
+            function _checkOnERC721Received(from, to, tokenId,attach){
                 if gt(extcodesize(to), 0){
                     
                     let pointer := mload(0x40)
@@ -255,9 +255,18 @@ object "ERC721"{
                     mstore(add(pointer, 0x40), from)
                     mstore(add(pointer, 0x60), tokenId)
                     mstore(add(pointer, 0x80), 0x80)
-                    mstore(0x40, add(pointer, 0xa0))
 
-                    let bytesAt, bytesSize := decodeBytes(3)
+                    let bytesAt, bytesSize
+                    if attach {
+                        mstore(0x40, add(pointer, 0xa0))
+                        bytesAt, bytesSize := decodeBytes(3)
+                    }
+
+                    if iszero(attach){
+                        bytesSize := 0x20
+                    }
+             
+
                     let size := add(add(4, mul(4, 0x20)), bytesSize)
                     let success := call(
                             gas(), 
@@ -282,7 +291,7 @@ object "ERC721"{
                     returndatacopy(0, 0, returndatasize())
 
                     let response := mload(0)
-                    if ne(response,shl(224,0x150b7a02)){
+                    if ne(response, shl(224,0x150b7a02)){
                         revertERC721InvalidReceiver(to)
                     }
                 }
