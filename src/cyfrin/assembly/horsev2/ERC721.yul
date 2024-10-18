@@ -65,6 +65,14 @@ object "ERC721"{
             mstore(0x40,0x80)
 
             switch selector() 
+            /** name() */
+            case 0x06fdde03{   
+                nameWrapper()
+            }
+            /** symbol() */ 
+            case 0x95d89b41{
+                symbolWrapper()
+            }
             /** supportsInterface(bytes4)*/
             case 0x01ffc9a7 {
             }
@@ -119,6 +127,18 @@ object "ERC721"{
             default { revert(0,0) }
 
             /** Function Wrappers / Public */
+            function nameWrapper(){
+                let nameAt := handleStorageString(_nameSlot())
+                let nameLen := make0x20Compatible(mload(nameAt))
+                mstore(0x60, 0x20)
+                return(0x60, add(0x40, nameLen))
+            }
+
+            function symbolWrapper(){
+                let  nameAt := handleStorageString(_symbolSlot())
+                let  nameLen := mload(nameAt)
+                return(nameAt,add(0x20, nameLen))
+            }
 
             function balanceOfWrapper(){
                 let bal := _balanceOf(decodeAddress(0))
@@ -539,11 +559,43 @@ object "ERC721"{
                 mstore(0x40,memPointer)
             }
 
+            function handleStorageString(slot) -> at {
+                let val := sload(slot)
+                mstore(0, slot)
+                let pointer := keccak256(0,0x20)
+                let len := sload(pointer)
+                
+                at := mload(0x40)
+                if iszero(len){
+                    let strLen := and(val, 0xff)
+                    let str := shl(8, shr(8, val))
+                    mstore(at, strLen)
+                    mstore(add(at, 0x20), str)
+                    mstore(0x40, add(at, 0x40))
+                }
+
+                if gt(len, 0){    
+                    mstore(at, len)
+                    let chunks := div(len, 0x20)
+                    let module := mod(len, 0x20)
+                    if gt(module, 0){
+                         chunks := add(chunks, 1)
+                    }
+                    let idx := at
+                    for {let i := add(pointer, 1)} lt(i, chunks) { i := add(i, 1)}{
+                        idx := add(idx, 0x20)
+                        let chunk := sload(i)
+                        mstore(idx, chunk)
+                    } 
+                    mstore(0x40, add(add(at,0x20), mul(chunks, 0x20)))
+                }
+                
+            }
             function returnUint(v){
                 mstore(0,v)
                 return(0,0x20)
             }
-
+            
             function ne(a,b) -> bool {
                 bool := true
                 if eq(a,b){
@@ -556,6 +608,14 @@ object "ERC721"{
                 if eq(addr,0x0){
                     b := false
                 }
+            }
+
+            function make0x20Compatible(val) -> b{
+                let module := mod(val, 0x20)
+                if gt(module, 0){
+                    val := add(val, sub(0x20, module))
+                }
+                b := val
             }
 
         }
