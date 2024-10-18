@@ -38,16 +38,24 @@ object "ERC721"{
                 approveWrapper()
             }
             /** setApprovalForAll(address,bool) */
-            case 0xa22cb465{
+            case 0xa22cb465 {
                 setApprovalForAllWrapper()
             }
             /** safeTransferFrom(address,address,uint256) */
-            case 0x42842e0e{
+            case 0x42842e0e {
                 safeTransferFromWrapper()
             }
             /** safeTransferFrom(address,addressuint256,bytes) */
-            case 0xb88d4fde{
+            case 0xb88d4fde {
                 safeTransferFromWithDataWrapper()
+            }
+            /** safeMint(address,uint256) */
+            case  0xa1448194 {
+                safeMintWrapper()
+            }
+            /** safeMint(address,uint256,bytes) */
+            case 0x8832e6e3{
+                safeMintWithDataWrapper()
             }
             default { revert(0,0) }
 
@@ -120,6 +128,17 @@ object "ERC721"{
                 safeTransferFrom(from,to,tokenId,0x1)
             }
 
+            function safeMintWrapper(){
+                let from := decodeAddress(0)
+                let tokenId := decodeAddress(1)
+                _safeMint(from, tokenId,0x0)
+            }
+
+            function safeMintWithDataWrapper(){
+                let from := decodeAddress(0)
+                let tokenId := decodeAddress(1)
+                _safeMint(from, tokenId,0x1)
+            }
             /** Internal Function  */
             function _mint(to,tokenId){
                 if iszero(to){
@@ -235,6 +254,7 @@ object "ERC721"{
                 _transferFrom(from,to,tokenId)
                 _checkOnERC721Received(from,to,tokenId,attach)
             }
+
             function _transferFrom(from, to, tokenId){
                 if iszero(to){
                     revertERC721InvalidReceiver(to)
@@ -246,6 +266,12 @@ object "ERC721"{
                 }
    
             }
+
+            function _safeMint(to, tokenId, attach){
+                _mint(to,tokenId)
+                _checkOnERC721Received(0x0, to, tokenId, attach)
+            }
+
             function _checkOnERC721Received(from, to, tokenId,attach){
                 if gt(extcodesize(to), 0){
                     
