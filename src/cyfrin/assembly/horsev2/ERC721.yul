@@ -1,8 +1,70 @@
 object "ERC721"{
     code {
+        mstore(0x40,0x80)
         //execute constructor
+        decodeString(0x0, 0x0)
+        decodeString(0x1, 0x1)
+        //deploy runtime code on-chain
         datacopy(0,dataoffset("runtime"),datasize("runtime"))
         return(0,datasize("runtime"))
+
+        function findLen(offset) -> at {
+            let codelen := datasize("ERC721")
+            at := codelen
+            if gt(offset,0){
+                let pointer := mload(0x40)
+                for { let i := 0 } lt(i,offset) { i := add(i, 1)} {
+                    datacopy(pointer, at, 0x20)
+                    let len := mload(0)
+                    at := add(at, add(0x20, len))
+                }
+            }
+        }
+        function decodeString(offset, s_slot){
+            let codelen := datasize("ERC721")
+            let str_len_at := findLen(offset)
+            let pointer := mload(0x40)
+    
+            datacopy(pointer, str_len_at, 0x20)
+            let str_len := mload(pointer)
+            pointer := add(pointer,0x20)
+            datacopy(pointer, add(str_len_at, 0x20), str_len)
+                       
+            if gt(str_len, 0x1f) {
+                // hash slot
+                mstore(0x0, s_slot) 
+                let pointer_slot := keccak256(0x0,0x20)
+                // store pointer at slot
+                sstore(s_slot, pointer_slot)
+                // store len at pointer
+                sstore(pointer_slot, str_len)
+                // store data in 32 bytes chunk
+                let slot := add(pointer_slot, 1)
+                let limit := add(pointer, str_len)
+                let module := mod(limit, 0x20)
+                // make limit 0x20 bytes compatible
+                if gt(module, 0){
+                    limit := add(limit, sub(0x20, module))
+                } 
+                
+                for { let i := pointer } lt(i, limit) { i := add(i, 0x20) } {
+                    let chunk := mload(i)
+                    sstore(slot, chunk)
+    
+                    slot := add(slot, 1)
+                }
+            }
+            // store str with len
+            if lt(str_len, 32){
+                let str := or(mload(pointer), str_len)
+                sstore(s_slot, str)
+            }
+        }
+
+        function lte(a, b) -> r {
+            r := iszero(gt(a, b))
+        }
+
     }
     object "runtime" {
         code {
