@@ -583,9 +583,10 @@ object "ERC721"{
                          chunks := add(chunks, 1)
                     }
                     let idx := at
-                    for {let i := add(pointer, 1)} lt(i, chunks) { i := add(i, 1)}{
+                    pointer := add(pointer, 1)
+                    for {let i := 0} lt(i, chunks) { i := add(i, 1)}{
                         idx := add(idx, 0x20)
-                        let chunk := sload(i)
+                        let chunk := sload(add(pointer, i))
                         mstore(idx, chunk)
                     } 
                     mstore(0x40, add(add(at,0x20), mul(chunks, 0x20)))
