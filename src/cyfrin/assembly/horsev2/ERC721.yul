@@ -1,5 +1,6 @@
 object "ERC721"{
     code {
+        //free memory pointer
         mstore(0x40,0x80)
         //execute constructor
         decodeString(0x0, 0x0)
@@ -201,6 +202,7 @@ object "ERC721"{
                 let tokenId := decodeAddress(2)
                 safeTransferFrom(from,to,tokenId,0)
             }
+
             function safeTransferFromWithDataWrapper(){
                 let from := decodeAddress(0)
                 let to := decodeAddress(1)
@@ -336,6 +338,7 @@ object "ERC721"{
                sstore(slot,approved)
                emitApprovalForAll(owner,operator,approved)
             }
+
             function safeTransferFrom(from,to,tokenId,attach){
                 _transferFrom(from,to,tokenId)
                 _checkOnERC721Received(from,to,tokenId,attach)
@@ -419,13 +422,18 @@ object "ERC721"{
             /** Contract Layout  */
             
             function _nameSlot() ->s { s:=0 }
+
             function _symbolSlot() ->s { s:=1 }
+
             function _ownersSlot() ->s { s:=2 }
+
             function _balancesSlot() ->s { s:=3 }
+
             function _tokenApprovalsSlot() ->s { s:=4 }
+
             function _operatorApprovalsSlot() ->s { s:=5 } 
 
-             /** Contract Events  */
+             /** Events  */
             
             function emitTransfer(from,to,tokenId){
                 let sigHash := 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
@@ -449,8 +457,7 @@ object "ERC721"{
                 log3(0,0x20,sigHash,indexed1,indexed2)
             }
 
-            /** Contract Errors  */
-
+            /** Errors */
             function revertERC721InvalidOwner(owner){
                 mstore(0,0x89c62b64)
                 mstore(0x20,owner)
@@ -500,7 +507,9 @@ object "ERC721"{
                 mstore(0x60,owner)
                 revert(0x1c,0x64)
             }
+
             /** Utilities  */
+
             function _mapping(key,slot) -> s {
                 mstore(0,key)
                 mstore(0x20,slot)
@@ -530,6 +539,7 @@ object "ERC721"{
 
                 v:=calldataload(pos)
             }
+            
             function decodeBool(offset) -> v {
                 v := decodeUint(offset)
                 if gt(v,1){
