@@ -2,8 +2,7 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-solc = "0.8.21"
-
+auto_detect_solc = true
 seed = "0x1"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
@@ -17,12 +16,15 @@ fail_on_revert = true
 [fmt]
 bracket_spacing = true
 int_types = "long"
-line_length = 120
+line_length = 150
 wrap_comments = true
 multiline_func_header = "all"
+
 
 remappings = [
     '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
     '@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts',
 ]
 
+[rpc_endpoints]
+mainnet = "${RPC_URL_MAINNET}"
