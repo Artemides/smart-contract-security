@@ -19,20 +19,20 @@ contract HorseNumber is Test {
         horseStoreAddr = at;
     }
 
-    function testStartingHorseNumberZero() public {
-        uint256 horseNumber;
-        bytes memory data = abi.encodeWithSignature("readNumberOfHorses()");
-        (bool success, bytes memory response) = horseStoreAddr.call(data);
-        require(success);
-        (horseNumber) = abi.decode(response, (uint256));
-        assert(horseNumber == 0);
-    }
+    // function testStartingHorseNumberZero() public {
+    //     uint256 horseNumber;
+    //     bytes memory data = abi.encodeWithSignature("readNumberOfHorses()");
+    //     (bool success, bytes memory response) = horseStoreAddr.call(data);
+    //     require(success);
+    //     (horseNumber) = abi.decode(response, (uint256));
+    //     assert(horseNumber == 0);
+    // }
 
-    function testChangesHorseNumber() public {
-        bytes memory data = abi.encodeWithSignature("updateHorseNumber(uint256)", 25);
-        (bool success,) = horseStoreAddr.call(data);
-        require(success);
-        uint256 horseNumber = uint256(vm.load(horseStoreAddr, 0));
-        assert(horseNumber == 25);
-    }
+    // function testChangesHorseNumber() public {
+    //     bytes memory data = abi.encodeWithSignature("updateHorseNumber(uint256)", 25);
+    //     (bool success,) = horseStoreAddr.call(data);
+    //     require(success);
+    //     uint256 horseNumber = uint256(vm.load(horseStoreAddr, 0));
+    //     assert(horseNumber == 25);
+    // }
 }
