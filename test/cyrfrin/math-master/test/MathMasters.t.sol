@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 
 import { Base_Test, console2 } from "./BaseTest.t.sol";
-import { MathMasters } from "../src/MathMaster.sol";
+import { MathMasters } from "src/cyfrin/math-master/MathMaster.sol";
 
 contract MathMastersTest is Base_Test {
     function testMulWad() public pure {
@@ -40,6 +40,14 @@ contract MathMastersTest is Base_Test {
         // this function will simply not perform the assertion.
         // In a testing context, you might want to handle this case differently,
         // depending on whether you want to consider such an overflow case as passing or failing.
+    }
+
+    function check_MulwadUp(uint256 x, uint256 y) public {
+        if (x == 0 || y == 0 || y <= type(uint256).max / x) {
+            uint256 result = MathMasters.mulWadUp(x, y);
+            uint256 expected = x * y == 0 ? 0 : (x * y - 1) / 1e18 + 1;
+            assert(result == expected);
+        }
     }
 
     function testSqrt() public {
