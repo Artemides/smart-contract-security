@@ -7,9 +7,11 @@ seed = "0x1"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
+[fuzz]
+runs = 100000
 
 [invariant]
-runs = 3000
+runs = 100000
 depth = 64
 fail_on_revert = true
 
