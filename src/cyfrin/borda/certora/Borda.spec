@@ -135,7 +135,7 @@ rule allowVote(address f,address s,address t, method m){
     calldataarg args;
     m(e2, args) at init;
 
-    require points(t) < max_uint256 - 3  && points(s) < max_uint256 -2 && points(t) < max_uint256 - 1;
+    require points(f) < max_uint256 - 3  && points(s) < max_uint256 -2 && points(t) < max_uint256 - 1;
 
     vote@withrevert(e,f,s,t);
 
