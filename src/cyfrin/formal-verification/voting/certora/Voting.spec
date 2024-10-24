@@ -26,9 +26,7 @@ hook Sstore _hasVoted[KEY address a] bool val (bool oldVal){
         numVoted = numVoted +1;
     }
     // illegal: from false to false or false to false
-    if(oldVal){
-        illegalVote = illegalVote || val;
-    }
+    illegalVote = illegalVote || val;
     voteCasted = true;
 }
 
