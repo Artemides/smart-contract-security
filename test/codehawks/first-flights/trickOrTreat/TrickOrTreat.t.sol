@@ -105,6 +105,27 @@ contract TrickOrTreatTest is Test {
         vm.expectRevert();
         _protocol.withdrawFees();
     }
+
+    function testInefficientRepayment() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+
+        BadBuyer buyer = new BadBuyer();
+        vm.deal(address(buyer), 1 ether);
+        vm.prank(address(buyer));
+        vm.expectRevert();
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+    }
+}
+
+contract BadBuyer {
+    uint256 val;
+
+    receive() external payable {
+        //100
+        while (gasleft() > 0) {
+            val = type(uint256).max;
+        }
+    }
 }
 
 contract Owner {

@@ -198,7 +198,42 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 - Enforce `treat` minting, is assiged with unique metadata
 
-# [M-3] Repayments
+# [M-3] Repayments in `SpookySwap:trickOrTreat` and `SpookySwap:resolveTrick` implementations, might generate DOS, Higher costs on `transfers` and user experience degradation.
+
+**Description:** `SpookySwap` implement repayments, which repays exceeded amounts. Therefore, doing it so to `msg.sender` contracts and even to those with heavy computations might always revert `DOS` and may require higher gas computation for just `SpookySwap:trickOrTreat`.
+
+**Impact:** alothough repays are done via `msg.call{value}` repaying in the same transaction give users the flexibility to run in their fallback any code, that in case of `heavy computations` it can revert and even generate higher cost per transaction.
+
+**Proof of concept:**
+
+```javascript
+
+    contract BadBuyer {
+        uint256 val;
+
+        receive() external payable {
+            //100
+            while (gasleft() > 0) {
+                val = type(uint256).max;
+            }
+        }
+    }
+
+    function testInefficientRepayment() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+
+        BadBuyer buyer = new BadBuyer();
+        vm.deal(address(buyer), 1 ether);
+        vm.prank(address(buyer));
+        vm.expectRevert();
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+    }
+```
+
+**Recommended Mitigation:**
+
+- mantain a record of `pending-repay`
+- consider an implementation for allowing user to `withdraw` repays.
 
 # [M-4] Potential denial of Service, on `address.transfer (2300 gasLimit)` by `SpookySwap:withdrawFees`.
 
