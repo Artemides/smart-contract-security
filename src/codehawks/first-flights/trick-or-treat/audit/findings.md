@@ -39,9 +39,23 @@ Although, depending on the protocol, keeping costs, may be considered downsides 
 
 **Description:** Adding treats with the same same, overrides added treats, affecting `treatList[_treatName]` access, which queries the latests.
 
-**Impact:** overrides causing invalidad queries `treatList[_treatName]` makes `SpookySwap:setTreatCost` to update cost of latest treat, whereas by `SpookySwap:trickOrTreat` latests treat will be minted. besides, treats overriden are unusable and waste protocol's resources.
+**Impact:** overrides causing invalidad queries `treatList[_treatName]` makes `SpookySwap:setTreatCost` to update cost of latest treat, whereas by `SpookySwap:trickOrTreat` latests treat will be minted. besides, treats overriden are unusable and waste protocol's resources. Moreover, `SpookySwap:resolveTrick` even being tied to a `tokenId` it still queries a treat by `_name` also getting affected.
 
 **Proof of concept:**
+
+```javascript
+    function resolveTrick(uint256 tokenId) public payable nonReentrant {
+        require(pendingNFTs[tokenId] == msg.sender, "Not authorized to complete purchase");
+
+        string memory treatName = tokenIdToTreatName[tokenId];
+      @>Treat memory treat = treatList[treatName];
+
+        /*
+        ...impl...
+        */
+    }
+
+```
 
 ```javascript
     function testTreatOverrides() public {
