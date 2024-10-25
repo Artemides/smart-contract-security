@@ -6,13 +6,36 @@
 
 # High
 
-## [H-1] Central Authotities `Owner` can still manipulate tricked `Treats`
+## [H-1] Central Authotities `Owner` can still manipulate `tricked/pending Treats`.
 
-**Description:** `Owners` can manipulate the price of an already tricked `Treat`, changing their cost and value, affecting potential `trades` between user with revaluations which affect either positively or negatively initial user `investment`.
+**Description:**
+
+Although there's no sufficient specification whether it's itended to do so, meaning `Spooky Surprise`.
+
+`Owners` can manipulate the price of an `already tricked Treat`, changing their cost, affecting `SpookySwap:resolveTrick` either for cheaper or expensiver later cost, as well as potential `trades` between users with revaluations either positively or negatively in contrast to initial user `investment`.
 
 **Impact:** users might not find an attractive Protocol or so, due to potential cost `increasement` or `decreasement` made by Central Authority or Protocol's owner.
 
 **Proof of concept:**
+
+```javascript
+    function resolveTrick(uint256 tokenId) public payable nonReentrant {
+        require(pendingNFTs[tokenId] == msg.sender, "Not authorized to complete purchase");
+
+        string memory treatName = tokenIdToTreatName[tokenId];
+    @>  Treat memory treat = treatList[treatName];
+    @>  uint256 requiredCost = treat.cost * 2; // Double price
+        uint256 amountPaid = pendingNFTsAmountPaid[tokenId];
+        uint256 totalPaid = amountPaid + msg.value;
+
+    @>  require(totalPaid >= requiredCost, "Insufficient ETH sent to complete purchase");
+
+      /*
+        ...impl..
+      */
+    }
+
+```
 
 ```javascript
      function testTreatCostManipulation() public {
