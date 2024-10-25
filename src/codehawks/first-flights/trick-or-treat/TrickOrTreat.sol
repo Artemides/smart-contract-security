@@ -69,7 +69,6 @@ contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
             costMultiplierDenominator = 1;
         }
         // Else, normal price (multiplier remains 1/1)
-
         uint256 requiredCost = (treat.cost * costMultiplierNumerator) / costMultiplierDenominator;
 
         if (costMultiplierNumerator == 2 && costMultiplierDenominator == 1) {

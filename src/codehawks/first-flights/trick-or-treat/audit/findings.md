@@ -131,4 +131,32 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
-# [M-2]
+# [M-1] Ambiguity in Shared Metadata Usage, NFT treat are expected to be unique in design `ERC721`
+
+**Description:** Without no specification if sharing metadata is itended to do so, `SpookySwap:trickOrTreat` ties a `Treat` along with `tokenId` then attaches a `metadata` as tokenURI, which contradicts the expected uniqueness of NFT's.
+
+**Impact:** Although it does not affect protocol funds, it assignss same metadata to multile `tokenIds`, leading to user confusion, as buyers expect to buy unique `Treats`, as they aren't unique they are devaluated.
+
+**Proof of concept:**
+
+```javascript
+    function testSameMetadaForMultipleTokenIds() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+        uint256 tokenId1 = protocol.nextTokenId();
+        vm.prank(user);
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        uint256 tokenId2 = protocol.nextTokenId();
+        vm.prank(user2);
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        string memory metadata1 = protocol.tokenURI(tokenId1);
+        string memory metadata2 = protocol.tokenURI(tokenId2);
+
+        assert(Strings.equal(metadata1, metadata2));
+    }
+```
+
+**Recommended Mitigation:**
+
+- Enforce `treat` minting, is assiged with unique metadata

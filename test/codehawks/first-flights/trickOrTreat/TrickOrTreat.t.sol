@@ -8,11 +8,14 @@ import "./../../../../src/codehawks/first-flights/trick-or-treat/TrickOrTreat.so
 contract TrickOrTreatTest is Test {
     SpookySwap protocol;
     address user = makeAddr("user");
+    address user2 = makeAddr("user2");
 
     event TreatAdded(string name, uint256 cost, string metadataURI);
 
     function setUp() public {
         vm.deal(user, 1 ether);
+        vm.deal(user2, 1 ether);
+
         SpookySwap.Treat[] memory treats;
         protocol = new SpookySwap(treats);
     }
@@ -67,5 +70,21 @@ contract TrickOrTreatTest is Test {
 
         string memory uri = protocol.tokenURI(tokenId3);
         assert(Strings.equal(uri, "uri3"));
+    }
+
+    function testSameMetadaForMultipleTokenIds() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+        uint256 tokenId1 = protocol.nextTokenId();
+        vm.prank(user);
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        uint256 tokenId2 = protocol.nextTokenId();
+        vm.prank(user2);
+        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        string memory metadata1 = protocol.tokenURI(tokenId1);
+        string memory metadata2 = protocol.tokenURI(tokenId2);
+
+        assert(Strings.equal(metadata1, metadata2));
     }
 }
