@@ -87,4 +87,37 @@ contract TrickOrTreatTest is Test {
 
         assert(Strings.equal(metadata1, metadata2));
     }
+
+    function testDOSonWithdrawFees() public {
+        Owner owner = new Owner();
+
+        SpookySwap.Treat memory treat = SpookySwap.Treat("candy", 0.1 ether, "ipfs://candy-cid");
+        SpookySwap.Treat[] memory treats = new SpookySwap.Treat[](1);
+        treats[0] = treat;
+
+        vm.prank(address(owner));
+        SpookySwap _protocol = new SpookySwap(treats);
+
+        vm.prank(user);
+        _protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        vm.prank(address(owner));
+        vm.expectRevert();
+        _protocol.withdrawFees();
+    }
+}
+
+contract Owner {
+    uint256 val;
+
+    receive() external payable {
+        uint256 gas = gasleft();
+        uint256 consumed;
+        //100
+        while (consumed <= 2300) {
+            val = type(uint256).max;
+            consumed += gas - gasleft();
+            gas = gasleft();
+        }
+    }
 }

@@ -168,7 +168,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
-# [M-1] Ambiguity in Shared Metadata Usage, NFT treat are expected to be unique in design `ERC721`
+# [M-2] Ambiguity in Shared Metadata Usage, NFT treat are expected to be unique in design `ERC721`
 
 **Description:** Without no specification if sharing metadata is itended to do so, `SpookySwap:trickOrTreat` ties a `Treat` along with `tokenId` then attaches a `metadata` as tokenURI, which contradicts the expected uniqueness of NFT's.
 
@@ -197,3 +197,54 @@ Implement a mapping that indicates which treat name has been already added ti `t
 **Recommended Mitigation:**
 
 - Enforce `treat` minting, is assiged with unique metadata
+
+# [M-3] Repayments
+
+# [M-4] Potential denial of Service, on `address.transfer (2300 gasLimit)` by `SpookySwap:withdrawFees`.
+
+**Description:** Usage of `address.transfer` built-in method might revert if `Owner` is a contract containing heavy operations on `receive` or `fallback` since `transfer` only supports a max gas usage of `2300`. producing DOS which lock the funds of `SpookySwap` forever.
+
+**Impact:** Protocol's Funds stay locked unless recipient handles `receive` ether under less than `2300 gas`.
+
+**Proof of concept:**
+
+```javascript
+
+    contract Owner {
+        uint256 val;
+
+        receive() external payable {
+            uint256 gas = gasleft();
+            uint256 consumed;
+            //100
+            while (consumed <= 2300) {
+                val = type(uint256).max;
+                consumed += gas - gasleft();
+                gas = gasleft();
+            }
+        }
+    }
+
+    function testDOSonWithdrawFees() public {
+        Owner owner = new Owner();
+
+        SpookySwap.Treat memory treat = SpookySwap.Treat("candy", 0.1 ether, "ipfs://candy-cid");
+        SpookySwap.Treat[] memory treats = new SpookySwap.Treat[](1);
+        treats[0] = treat;
+
+        vm.prank(address(owner));
+        SpookySwap _protocol = new SpookySwap(treats);
+
+        vm.prank(user);
+        _protocol.trickOrTreat{ value: 0.2 ether }("candy");
+
+        vm.prank(address(owner));
+        vm.expectRevert();
+        _protocol.withdrawFees();
+    }
+```
+
+**Recommended Mitigation:**
+
+- use low level `addres.call` instead
+- in case of DOS transfer ownership
