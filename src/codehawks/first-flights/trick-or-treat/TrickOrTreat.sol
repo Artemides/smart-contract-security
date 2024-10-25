@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 // Import OpenZeppelin contracts
-import "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
     uint256 public nextTokenId;
@@ -35,7 +35,7 @@ contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
     }
 
     //@audit @param _rate must be cost
-    //@audit lack of zero-cost verification
+    //@audit lack of zero-cost verification, causes
     function addTreat(string memory _name, uint256 _rate, string memory _metadataURI) public onlyOwner {
         treatList[_name] = Treat(_name, _rate, _metadataURI);
         treatNames.push(_name);
@@ -44,6 +44,7 @@ contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
 
     //@audit treats added with zero-Price won't ever be allowed to be updated
     function setTreatCost(string memory _treatName, uint256 _cost) public onlyOwner {
+        //q treats having the same _treatName override one to another;
         require(treatList[_treatName].cost > 0, "Treat must cost something.");
         treatList[_treatName].cost = _cost;
     }

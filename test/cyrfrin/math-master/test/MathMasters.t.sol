@@ -2,7 +2,7 @@
 pragma solidity ^0.8.3;
 
 import { Base_Test, console2 } from "./BaseTest.t.sol";
-import { MathMasters } from "src/cyfrin/math-master/MathMaster.sol";
+import "./../../../../src/cyfrin/formal-verification/math-master/MathMaster.sol";
 
 contract MathMastersTest is Base_Test {
     function testMulWad() public pure {
