@@ -45,4 +45,27 @@ contract TrickOrTreatTest is Test {
         protocol.setTreatCost("candy", 0.0001 ether);
         protocol.setTreatCost("candy", 0);
     }
+
+    function testTreatOverrides() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+        protocol.addTreat("candy", 0.2 ether, "uri2");
+        uint256 tokenId3 = protocol.nextTokenId();
+        protocol.addTreat("candy", 0.3 ether, "uri3");
+        //confirm 3 treats were added
+        uint256 treats = (protocol.getTreats()).length;
+        assertEq(treats, 3);
+        //update latest "candy token"
+        protocol.setTreatCost("candy", 0.5 ether);
+        //token 1 and 2 are not accesible by no means
+        (string memory name, uint256 cost,) = protocol.treatList("candy");
+
+        assert(cost == 0.5 ether && Strings.equal(name, "candy"));
+        //TrickOrTreat are applied to latest candy
+        vm.prank(user);
+        //Buy candy "will purchase third"
+        protocol.trickOrTreat{ value: 1 ether }("candy");
+
+        string memory uri = protocol.tokenURI(tokenId3);
+        assert(Strings.equal(uri, "uri3"));
+    }
 }

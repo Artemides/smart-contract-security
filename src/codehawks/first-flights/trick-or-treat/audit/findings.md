@@ -35,6 +35,57 @@ Allowing `Protocol:Owner` treat manipulation, ungrants `Treat:Owners` to take co
 
 Although, depending on the protocol, keeping costs, may be considered downsides if meant for `Profitable Approach`.
 
+## [H-2] `SpookySwap:Treat` overrdies previous tokens having the same name
+
+**Description:** Adding treats with the same same, overrides added treats, affecting `treatList[_treatName]` access, which queries the latests.
+
+**Impact:** overrides causing invalidad queries `treatList[_treatName]` makes `SpookySwap:setTreatCost` to update cost of latest treat, whereas by `SpookySwap:trickOrTreat` latests treat will be minted. besides, treats overriden are unusable and waste protocol's resources.
+
+**Proof of concept:**
+
+```javascript
+    function testTreatOverrides() public {
+        protocol.addTreat("candy", 0.1 ether, "uri1");
+        protocol.addTreat("candy", 0.2 ether, "uri2");
+        uint256 tokenId3 = protocol.nextTokenId();
+        protocol.addTreat("candy", 0.3 ether, "uri3");
+        //confirm 3 treats were added
+        uint256 treats = (protocol.getTreats()).length;
+        assertEq(treats, 3);
+        //update latest "candy token"
+        protocol.setTreatCost("candy", 0.5 ether);
+        //token 1 and 2 are not accesible by no means
+        (string memory name, uint256 cost,) = protocol.treatList("candy");
+
+        assert(cost == 0.5 ether && Strings.equal(name, "candy"));
+        //TrickOrTreat are applied to latest candy
+        vm.prank(user);
+        //Buy candy "will purchase third"
+        protocol.trickOrTreat{ value: 1 ether }("candy");
+
+        string memory uri = protocol.tokenURI(tokenId3);
+        assert(Strings.equal(uri, "uri3"));
+    }
+```
+
+**Recommneded Mitigation:**
+Implement a mapping that indicates which treat name has been already added ti `treatList[_treatName]`, check name uniqueness before adding
+
+```diff
+    contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
++       mapping(string  => bool) public exists
+        /* impl */
+        function addTreat(string memory _name, uint256 _rate, string memory _metadataURI) public onlyOwner {
++           require(!exists[_name], "Treat already added");
+            treatList[_name] = Treat(_name, _rate, _metadataURI);
+            treatNames.push(_name);
+            emit TreatAdded(_name, _rate, _metadataURI);
+        }
+    }
+
+    }
+```
+
 # Medium
 
 ## [M-1] Lack of `zero-cost` check by `SpookySwap:addTreat`, unables `Treats` of being `SpookySwap:setTreatCost` and `SpookySwap:trickOrTreat`.

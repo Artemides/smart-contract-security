@@ -12,3 +12,4 @@
 - treats belongs to unique nft ids?
 - can trickedOrTreated Nfts still be trickable?
 - can trickedOrTreated Nfts still be price-manipulated by Central Authorities(Owner)? Yes
+- can Treats be overridden by new Treats with the same name? Yes
