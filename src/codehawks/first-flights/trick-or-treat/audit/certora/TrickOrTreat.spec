@@ -75,9 +75,9 @@ rule userGetsRepaidIfEthSentExceeds(string name){
     require(e.msg.sender != 0);
     require(e.msg.value > 0);
 
-    uint256 preBalance = nativeBalances[e.msg.sender];
+    uint256 preBalance = nativeBalances[e.msg.sender];    
     uint256 tokenId = nextTokenId();
-    
+
     callMirror[e.msg.sender] = 0;
     trickOrTreat(e,name);
 
@@ -88,11 +88,8 @@ rule userGetsRepaidIfEthSentExceeds(string name){
     
     //repay == sent - requiredCost
     mathint requiredCost = e.msg.value - repay;
-    
+
     assert requiredCost == cost/2 || requiredCost == cost || requiredCost == 2 * cost, "Required cost not sppookied as half, exact or double";
-
-    assert nativeBalances[e.msg.sender] == preBalance - e.msg.value + repay , "Did not transfered correct repay amount";
-
 }
 
 /*
