@@ -123,6 +123,8 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
+## [H-3] Denial of Service when `random = 2` `costMultiplierNumerator=2 and costMultiplierDenominator`, allows malicious users to make `treats:Pending` at any price.
+
 # Medium
 
 ## [M-1] Lack of `zero-cost` check by `SpookySwap:addTreat`, unables `Treats` of being `SpookySwap:setTreatCost` and `SpookySwap:trickOrTreat`.
@@ -168,7 +170,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
-# [M-2] Ambiguity in Shared Metadata Usage, NFT treat are expected to be unique in design `ERC721`
+## [M-2] Ambiguity in Shared Metadata Usage, NFT treat are expected to be unique in design `ERC721`
 
 **Description:** Without no specification if sharing metadata is itended to do so, `SpookySwap:trickOrTreat` ties a `Treat` along with `tokenId` then attaches a `metadata` as tokenURI, which contradicts the expected uniqueness of NFT's.
 
@@ -198,7 +200,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 - Enforce `treat` minting, is assiged with unique metadata
 
-# [M-3] Repayments in `SpookySwap:trickOrTreat` and `SpookySwap:resolveTrick` implementations, might generate DOS, Higher costs on `transfers` and user experience degradation.
+## [M-3] Repayments in `SpookySwap:trickOrTreat` and `SpookySwap:resolveTrick` implementations, might generate DOS, Higher costs on `transfers` and user experience degradation.
 
 **Description:** `SpookySwap` implement repayments, which repays exceeded amounts. Therefore, doing it so to `msg.sender` contracts and even to those with heavy computations might always revert `DOS` and may require higher gas computation for just `SpookySwap:trickOrTreat`.
 
@@ -235,7 +237,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
 - mantain a record of `pending-repay`
 - consider an implementation for allowing user to `withdraw` repays.
 
-# [M-4] Potential denial of Service, on `address.transfer (2300 gasLimit)` by `SpookySwap:withdrawFees`.
+## [M-4] Potential denial of Service, on `address.transfer (2300 gasLimit)` by `SpookySwap:withdrawFees`.
 
 **Description:** Usage of `address.transfer` built-in method might revert if `Owner` is a contract containing heavy operations on `receive` or `fallback` since `transfer` only supports a max gas usage of `2300`. producing DOS which lock the funds of `SpookySwap` forever.
 
@@ -283,3 +285,5 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 - use low level `addres.call` instead
 - in case of DOS transfer ownership
+
+## [M-5] treats with 1 wei cost, spookied at half price are rounded to zero,

