@@ -38,15 +38,34 @@ Although there's no sufficient specification whether it's itended to do so, mean
 ```
 
 ```javascript
-     function testTreatCostManipulation() public {
-        protocol.addTreat("candy", 0.1 ether, "");
+    function testTreatCostManipulation() public {
+        protocol.addTreat("candy", 1 ether, "");
+
+        uint256 nextTokenId = protocol.nextTokenId();
+        uint256 random;
+        //Prdict randomness as 2 so that Pending path get's hit
+        while (true) {
+            uint256 timestramp = block.timestamp;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), nextTokenId, block.prevrandao))) % 1000 + 1;
+            if (random == 2) {
+                break;
+            }
+            vm.warp(timestramp + 1);
+        }
 
         vm.prank(user);
-        //send 0.2 ether in case of price tricked at double
-        protocol.trickOrTreat{ value: 0.2 ether }("candy");
+        //Initial Cost 1 ether
+        protocol.trickOrTreat{ value: 0.1 ether }("candy");
 
-        protocol.setTreatCost("candy", 0.0001 ether);
-        protocol.setTreatCost("candy", 0);
+        //Owner Update
+        protocol.setTreatCost("candy", 2 ether);
+
+        //pendingPayment: 2 * cost - pendingNFTsAmountPaid
+        //pendingPayment: 2 * 1 ether - 0.1 ether = 1.9 ether;
+        vm.expectRevert(bytes("Insufficient ETH sent to complete purchase"));
+        vm.prank(user);
+        protocol.resolveTrick{ value: 1.9 ether }(nextTokenId);
+        //Now user is supposed to pay much more than it should have
     }
 ```
 

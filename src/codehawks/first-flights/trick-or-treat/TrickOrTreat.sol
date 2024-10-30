@@ -5,6 +5,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "forge-std/console.sol";
 
 contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
     uint256 public nextTokenId;
@@ -77,6 +78,7 @@ contract SpookySwap is ERC721URIStorage, Ownable(msg.sender), ReentrancyGuard {
                 // User sent enough ETH
                 mintTreat(msg.sender, treat);
             } else {
+                console.log(">>>>PENDING");
                 // User didn't send enough ETH
                 // Mint NFT to contract and store pending
                 uint256 tokenId = nextTokenId;
