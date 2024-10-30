@@ -62,16 +62,31 @@ Although, depending on the protocol, keeping costs, may be considered downsides 
 
 **Description:** Adding treats with the same same, overrides added treats, affecting `treatList[_treatName]` access, which queries the latests.
 
-**Impact:** overrides causing invalidad queries `treatList[_treatName]` makes `SpookySwap:setTreatCost` to update cost of latest treat, whereas by `SpookySwap:trickOrTreat` latests treat will be minted. besides, treats overriden are unusable and waste protocol's resources. Moreover, `SpookySwap:resolveTrick` even being tied to a `tokenId` it still queries a treat by `_name` also getting affected.
+**Impact:** overrides causing invalidad queries `treatList[_treatName]` makes `SpookySwap:setTreatCost` to update cost of latest treat, whereas by `SpookySwap:trickOrTreat` latests treat will be minted. Moreover, `SpookySwap:resolveTrick` even being tied to a `tokenId` it still queries a treat by `_name` also getting affected.
 
 **Proof of concept:**
 
 ```javascript
+
+    function addTreat(string memory _name, uint256 _rate, string memory _metadataURI) public onlyOwner {
+    @>  treatList[_name] = Treat(_name, _rate, _metadataURI);
+        treatNames.push(_name);
+        emit TreatAdded(_name, _rate, _metadataURI);
+    }
+
+    function trickOrTreat(string memory _treatName) public payable nonReentrant {
+    @>  Treat memory treat = treatList[_treatName];
+        require(treat.cost > 0, "Treat cost not set.");
+
+        /*
+        ...impl...
+        */
+    }
     function resolveTrick(uint256 tokenId) public payable nonReentrant {
         require(pendingNFTs[tokenId] == msg.sender, "Not authorized to complete purchase");
 
         string memory treatName = tokenIdToTreatName[tokenId];
-      @>Treat memory treat = treatList[treatName];
+    @>  Treat memory treat = treatList[treatName];
 
         /*
         ...impl...

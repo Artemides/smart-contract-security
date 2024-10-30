@@ -9,6 +9,10 @@ methods {
     function trickOrTreat(string name) external;
     function treatList(string Message) external returns (string, uint256, string) envfree;
     function nextTokenId() external returns uint256 envfree;
+    function resolveTrick(uint256) external;
+    function ownerOf(uint256) external returns address envfree;
+    function tokenIdToTreatName(uint256) external returns string envfree;
+    function pendingNFTsAmountPaid(uint256) external returns uint256 envfree;
 }
 
 ghost bool treatOverridden;
@@ -93,9 +97,38 @@ rule userGetsRepaidIfEthSentExceeds(string name){
 }
 
 /*
-    will set a treat as pending when not enough value sent
+    Note: Pending treats can be resolved at double price
 */
 
-// rule setsTreasAsPendingWhenNotEnoughValue(){
+rule onlyPendingTricksAreResolved(uint256 tokenId){
+    env e;
+    resolveTrick(e,tokenId);
+
+    address owner = ownerOf(tokenId);
+    assert owner == e.msg.sender;
     
-// }
+}
+
+/*
+    Note: Resolved Trick costs double
+*/
+
+rule resolvedTricksCostsDouble(uint256 tokenId){
+    string name = tokenIdToTreatName(tokenId);
+    uint256 cost;
+    string s;
+    (s, cost, s)  = treatList(name);
+    env e;
+
+    callMirror[e.msg.sender] = 0;
+    resolveTrick(e,tokenId);
+    //prevPaid
+    //Paid
+    //refund = totalPaid - reqCost
+    //reqCost =totalPaid - refdund
+    uint256 repay = callMirror[e.msg.sender];
+    callMirror[e.msg.sender] = 0;
+    mathint requiredCost = e.msg.value + pendingNFTsAmountPaid(tokenId) - repay;
+
+    assert requiredCost == 2 * cost, "Required cost not sppookied as half, exact or double";
+}
