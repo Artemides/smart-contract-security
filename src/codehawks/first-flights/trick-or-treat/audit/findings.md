@@ -138,7 +138,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
     }
 ```
 
-## [H-3] treats with 1 wei cost, spookied at `random = 1 => requiredCost:half-price` are rounded to zero. leading to free purchases.
+## [H-3] treats with 1 wei cost, spooked at `random = 1 => requiredCost:half-price` are rounded to zero. leading to free purchases.
 
 **Description:** By predicting `random = 1` `SpookySwap:trickOrTreat` malicious users can buy `Treats` for free, due to divisions are exact in solidity `1/2` will be rounded as `0`, doing so `requiredCost`to be 0, enabling free purchases, notice that `Treats` can repriced and traded at higher prices.
 
@@ -178,7 +178,7 @@ Implement a mapping that indicates which treat name has been already added ti `t
 **Recommneded Mitigation:**
 
 - Usage of fixed-point arithmetic
-- Beware of presicion loss
+- Beware of precision loss
 
 # Medium
 

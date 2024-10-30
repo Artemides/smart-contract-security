@@ -140,11 +140,11 @@ contract TrickOrTreatTest is Test {
     function testTreatsAt1WeiForFree() public {
         protocol.addTreat("candy", 1 wei, "uri1");
 
-        uint256 tokenId = protocol.nextTokenId();
+        uint256 nextTokenId = protocol.nextTokenId();
         uint256 random;
         while (true) {
             uint256 timestramp = block.timestamp;
-            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), tokenId, block.prevrandao))) % 1000 + 1;
+            random = uint256(keccak256(abi.encodePacked(timestramp, address(user), nextTokenId, block.prevrandao))) % 1000 + 1;
             if (random == 1) {
                 break;
             }
