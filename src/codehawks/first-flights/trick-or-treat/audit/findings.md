@@ -6,7 +6,7 @@
 
 # High
 
-## [H-1] Central Authotities `Owner` can still manipulate `tricked/pending Treats`.
+## [H-1] Central Authorities `Owner` can still manipulate `tricked/pending Treats`.
 
 **Description:**
 
@@ -184,9 +184,35 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 ## [M-1] Lack of `zero-cost` check by `SpookySwap:addTreat`, unables `Treats` of being `SpookySwap:setTreatCost` and `SpookySwap:trickOrTreat`.
 
-**Description:** By adding a new `Treat` either by constructing or calling `SpookySwap:addTreat` no checks for `zero-prices` are set. Consequently by calling`SpookySwap:setTreatCost`, only those with `prices` greater than `0` are allowed to be updated. as well as by calling `SpookySwap:setTreatCost` that updates `Treats` to `zero-cost`, making them unvaluable.
+**Description:** By adding a new `Treat` either by contract construction or calling `SpookySwap:addTreat` no checks for `zero-prices` are set. Consequently by calling `SpookySwap:setTreatCost` or `SpookySwap:trickOrTreat`, only those with `prices` greater than `0` will proceed. Moreover, updates of `Treats` to `zero-cost` aren't checked too.
 
-**Impact:** stuck `Treats` in the Protocol, unabling them to be `SpookySwap:trickOrTreat`, having them unusable which effectively waste protocol's resources. although it does not risk `Protocol:funds`.
+```javascript
+    function addTreat(string memory _name, uint256 _rate, string memory _metadataURI) public onlyOwner {
+        // _rate = 0 is set
+    @>  treatList[_name] = Treat(_name, _rate, _metadataURI);
+        treatNames.push(_name);
+        emit TreatAdded(_name, _rate, _metadataURI);
+    }
+
+    function setTreatCost(string memory _treatName, uint256 _cost) public onlyOwner {
+        // treatList[_treatName].cost == 0; stuck or disabled
+    @>  require(treatList[_treatName].cost > 0, "Treat must cost something.");
+        // _rate = 0 is set
+    @>  treatList[_treatName].cost = _cost;
+    }
+
+    function trickOrTreat(string memory _treatName) public payable nonReentrant {
+        Treat memory treat = treatList[_treatName];
+        //treat.cost == 0; disabled
+    @>  require(treat.cost > 0, "Treat cost not set.");
+
+        /*
+        ...impl...
+        */
+    }
+```
+
+**Impact:** stuck `Treats` in the Protocol, disabled of being `updated` nor `trickedOrTreated`, having them unusable which effectively waste protocol's resources. although it does not risk `Protocol:funds`.
 
 **Proof of concept:**
 
@@ -229,6 +255,17 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 **Description:** Without no specification if sharing metadata is itended to do so, `SpookySwap:trickOrTreat` ties a `Treat` along with `tokenId` then attaches a `metadata` as tokenURI, which contradicts the expected uniqueness of NFT's.
 
+```javascript
+    function mintTreat(address recipient, Treat memory treat) internal {
+        uint256 tokenId = nextTokenId;
+        _mint(recipient, tokenId);
+    @>  _setTokenURI(tokenId, treat.metadataURI);
+        nextTokenId += 1;
+
+        emit Swapped(recipient, treat.name, tokenId);
+    }
+```
+
 **Impact:** Although it does not affect protocol funds, it assignss same metadata to multile `tokenIds`, leading to user confusion, as buyers expect to buy unique `Treats`, as they aren't unique they are devaluated.
 
 **Proof of concept:**
@@ -259,7 +296,27 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 **Description:** `SpookySwap` implement repayments, which repays exceeded amounts. Therefore, doing it so to `msg.sender` contracts and even to those with heavy computations might always revert `DOS` and may require higher gas computation for just `SpookySwap:trickOrTreat`.
 
-**Impact:** alothough repays are done via `msg.call{value}` repaying in the same transaction give users the flexibility to run in their fallback any code, that in case of `heavy computations` it can revert and even generate higher cost per transaction.
+```javascript
+    function trickOrTreat(string memory _treatName) public payable nonReentrant {
+        /* impl */
+        if (msg.value > requiredCost) {
+            uint256 refund = msg.value - requiredCost;
+        @>  (bool refundSuccess,) = msg.sender.call{ value: refund }("");
+            require(refundSuccess, "Refund failed");
+        }
+    }
+
+     function resolveTrick(uint256 tokenId) public payable nonReentrant {
+        /* impl */
+        if (totalPaid > requiredCost) {
+            uint256 refund = totalPaid - requiredCost;
+         @> (bool refundSuccess,) = msg.sender.call{ value: refund }("");
+            require(refundSuccess, "Refund failed");
+        }
+    }
+```
+
+**Impact:** Although repays are done via `msg.call{value}` repaying in the same transaction give users the flexibility to run in their fallback any code, that in case of `heavy computations` it can revert and even generate higher cost per transaction.
 
 **Proof of concept:**
 
@@ -296,7 +353,15 @@ Implement a mapping that indicates which treat name has been already added ti `t
 
 **Description:** Usage of `address.transfer` built-in method might revert if `Owner` is a contract containing heavy operations on `receive` or `fallback` since `transfer` only supports a max gas usage of `2300`. producing DOS which lock the funds of `SpookySwap` forever.
 
-**Impact:** Protocol's Funds stay locked unless recipient handles `receive` ether under less than `2300 gas`.
+```javascript
+    function withdrawFees() public onlyOwner {
+        uint256 balance = address(this).balance;
+    @>  payable(owner()).transfer(balance);
+        emit FeeWithdrawn(owner(), balance);
+    }
+```
+
+**Impact:**Protocol's Funds stay locked unless recipient handles `receive` ether under less than `2300 gas`. `SpookySwap:changeOwner` mechanism doesn’t directly mitigate the risk of funds being inaccessible.
 
 **Proof of concept:**
 
