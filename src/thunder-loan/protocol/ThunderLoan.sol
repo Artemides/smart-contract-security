@@ -105,9 +105,7 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
     //////////////////////////////////////////////////////////////*/
     event Deposit(address indexed account, IERC20 indexed token, uint256 amount);
     event AllowedTokenSet(IERC20 indexed token, AssetToken indexed asset, bool allowed);
-    event Redeemed(
-        address indexed account, IERC20 indexed token, uint256 amountOfAssetToken, uint256 amountOfUnderlying
-    );
+    event Redeemed(address indexed account, IERC20 indexed token, uint256 amountOfAssetToken, uint256 amountOfUnderlying);
     event FlashLoan(address indexed receiverAddress, IERC20 indexed token, uint256 amount, uint256 fee, bytes params);
 
     /*//////////////////////////////////////////////////////////////
@@ -165,15 +163,8 @@ contract ThunderLoan is Initializable, OwnableUpgradeable, UUPSUpgradeable, Orac
     /// @param token The token they want to withdraw from
     /// @param amountOfAssetToken The amount of the underlying they want to withdraw
 
-    //@audit users are stuck with disallowed tokens, not being allowed to redeem
-    function redeem(
-        IERC20 token,
-        uint256 amountOfAssetToken
-    )
-        external
-        revertIfZero(amountOfAssetToken)
-        revertIfNotAllowedToken(token)
-    {
+    // @audit Users are stuck with unsupported tokens, unable to redeem them.
+    function redeem(IERC20 token, uint256 amountOfAssetToken) external revertIfZero(amountOfAssetToken) revertIfNotAllowedToken(token) {
         AssetToken assetToken = s_tokenToAssetToken[token];
         uint256 exchangeRate = assetToken.getExchangeRate();
         if (amountOfAssetToken == type(uint256).max) {
