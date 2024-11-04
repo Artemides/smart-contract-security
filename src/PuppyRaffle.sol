@@ -66,14 +66,7 @@ contract PuppyRaffle is ERC721, Ownable {
     /// @param _feeAddress the address to send the fees to
     /// @param _raffleDuration the duration in seconds of the raffle
 
-    constructor(
-        uint256 _entranceFee,
-        address _feeAddress,
-        uint256 _raffleDuration
-    )
-        ERC721("Puppy Raffle", "PR")
-        Ownable(msg.sender)
-    {
+    constructor(uint256 _entranceFee, address _feeAddress, uint256 _raffleDuration) ERC721("Puppy Raffle", "PR") Ownable(msg.sender) {
         entranceFee = _entranceFee;
         //@audit-advice: lack of zero address check
         feeAddress = _feeAddress;
@@ -154,8 +147,7 @@ contract PuppyRaffle is ERC721, Ownable {
         require(block.timestamp >= raffleStartTime + raffleDuration, "PuppyRaffle: Raffle not over");
         require(players.length >= 4, "PuppyRaffle: Need at least 4 players");
         //@audit weak random number generation
-        uint256 winnerIndex =
-            uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
+        uint256 winnerIndex = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, block.difficulty))) % players.length;
         address winner = players[winnerIndex];
         uint256 totalAmountCollected = players.length * entranceFee;
         uint256 prizePool = (totalAmountCollected * 80) / 100;
