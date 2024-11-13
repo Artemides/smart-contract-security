@@ -56,7 +56,7 @@ contract GivingThanksTest is Test {
         // Verify ownership of the NFT
         address ownerOfToken = charityContract.ownerOf(initialTokenCounter);
         assertEq(ownerOfToken, donor);
-
+        charityContract.tokenURI(initialTokenCounter);
         // Verify that the donation was sent to the charity
         uint256 charityBalance = charity.balance;
         assertEq(charityBalance, donationAmount);

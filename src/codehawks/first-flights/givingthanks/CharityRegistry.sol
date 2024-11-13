@@ -20,10 +20,12 @@ contract CharityRegistry {
         verifiedCharities[charity] = true;
     }
 
+    //@audit should return verifiedCharities[address]
     function isVerified(address charity) public view returns (bool) {
         return registeredCharities[charity];
     }
 
+    //@i  lacks a zero-check on
     function changeAdmin(address newAdmin) public {
         require(msg.sender == admin, "Only admin can change admin");
         admin = newAdmin;
