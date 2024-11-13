@@ -50,9 +50,9 @@
     }
 ```
 
-# [M-2] Unsafe NFT Minting with `_mint` for Donators who not support ERC721Receiver
+# [M-2] Unsafe NFT Minting with `_mint` for donors who not support ERC721Receiver
 
-**Description:** within the `GivingThanks:donate`, the function `_mint` is called which transfers tokens to recipients wether they support ERC721Receiver, that if donator do not handle these tokens, they will be get stuck.
+**Description:** within the `GivingThanks:donate`, the function `_mint` is called which transfers tokens to recipients wether they support ERC721Receiver, that if donor do not handle these tokens, they will be get stuck.
 
 ```javascript
    function donate(address charity) public payable {
@@ -67,13 +67,65 @@
     }
 ```
 
-**Impact:** Permanent loss of tokens with the donators if they do not implement ERC721Receiver
+**Impact:** Permanent loss of tokens with the donors if they do not implement ERC721Receiver
 
 **Proof of Concept:**
 
 **Recommended Mitigation:**
 
-- use `_safeMint` instead for contract donators.
+- use `_safeMint` instead for contract donors.
+
+# [M-3] Anyone can change `GivingThanks:CharityRegistry`
+
+**Description:** lack of protection by `GivingThanks:updateRegistry`, allows anyone to update it.
+
+```javascript
+    function updateRegistry(address _registry) public {
+        registry = CharityRegistry(_registry);
+    }
+```
+
+**Impact:** Allows to be used any address or contract as `CharityRegistry`, that eventually breaks or bypasses any dependency such `registry.isVerified`.
+
+**Proof of Concept:**
+
+- _user_: creates a `bad Register`.
+- _user_: creates `bad charity` may register or not (does not matter).
+- _user_: updates `GivingThanks:Registry`,
+- _donor_: donates somehow to badCharity.
+- _badRegister_: bypasses any verification.
+- _badCharity_: receives donation.
+
+```javascript
+
+    contract BadRegistry {
+        function isVerified(address) public pure returns (bool) {
+            return true;
+        }
+    }
+
+    function testAnyoneCanUpdateRegistry() public {
+        address badCharity = makeAddr("badCharity");
+        BadRegistry badRegistry = new BadRegistry();
+        charityContract.updateRegistry(address(badRegistry));
+        registryContract.registerCharity(badCharity);
+        vm.deal(donor, 10 ether);
+        vm.prank(donor);
+        charityContract.donate{ value: 1 ether }(badCharity);
+        assertEq(badCharity.balance, 1 ether);
+    }
+```
+
+**Recommended Mitigation:**
+
+Add owner requirement to proceed `Registry` update.
+
+```diff
+    function updateRegistry(address _registry) public {
++       require(msg.sender == owner);
+        registry = CharityRegistry(_registry);
+    }
+```
 
 # Low
 

