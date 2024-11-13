@@ -52,7 +52,6 @@
 
 # [M-2] Unsafe NFT Minting with `_mint` for Donators who not support ERC721Receiver
 
-s
 **Description:** within the `GivingThanks:donate`, the function `_mint` is called which transfers tokens to recipients wether they support ERC721Receiver, that if donator do not handle these tokens, they will be get stuck.
 
 ```javascript
