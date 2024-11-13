@@ -105,4 +105,15 @@ contract GivingThanksTest is Test {
         uint256 charityBalance = charity.balance;
         assertEq(charityBalance, initialCharityBalance + donationAmount);
     }
+
+    function testRegisteredCharitiesReceiveDonations() public {
+        address anyCharity = makeAddr("anyCharity");
+
+        registryContract.registerCharity(anyCharity);
+        vm.deal(donor, 10 ether);
+        vm.prank(donor);
+        charityContract.donate{ value: 1 ether }(anyCharity);
+
+        assertEq(anyCharity.balance, 1 ether);
+    }
 }

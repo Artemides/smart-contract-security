@@ -25,7 +25,6 @@ contract CharityRegistry {
         return registeredCharities[charity];
     }
 
-    //@i  lacks a zero-check on
     function changeAdmin(address newAdmin) public {
         require(msg.sender == admin, "Only admin can change admin");
         admin = newAdmin;
