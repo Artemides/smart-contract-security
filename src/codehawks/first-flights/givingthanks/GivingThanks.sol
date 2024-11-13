@@ -15,7 +15,7 @@ contract GivingThanks is ERC721URIStorage {
 
     constructor(address _registry) ERC721("DonationReceipt", "DRC") {
         //@audit _registry should be set instead of msg.sender
-        registry = CharityRegistry(_registry);
+        registry = CharityRegistry(msg.sender);
         owner = msg.sender;
         tokenCounter = 0;
     }

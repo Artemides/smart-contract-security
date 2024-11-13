@@ -49,3 +49,36 @@
 +       return verifiedCharities[charity];
     }
 ```
+
+# Low
+
+# [L-1] `_registry` should be set instead of msg.sender at construction
+
+**Description:** during construction the `CharityRegistry` is being set as `msg.sender` instead of `_registry` param.
+
+```javascript
+    constructor(address _registry) ERC721("DonationReceipt", "DRC") {
+    @>  registry = CharityRegistry(msg.sender);
+        owner = msg.sender;
+        tokenCounter = 0;
+    }
+```
+
+**Impact:** Donation cannot proceed unless `CharityRegistry` gets updated
+
+**Proof of Concept:**
+
+CharityRegistry wronly instantiated at construction. Hence, Donations cannot proceed.
+
+- **Owner - Deployer:** deploy the protocol (`_registry` param unused)
+
+```javascript
+   function testImpededDonations() public {
+        // run setUp which deploys as follows
+        // new GivingThanks(address(registryContract));
+        vm.deal(donor, 10 ether);
+        vm.expectRevert();
+        vm.prank(donor);
+        charityContract.donate{ value: 1 ether }(charity);
+    }
+```

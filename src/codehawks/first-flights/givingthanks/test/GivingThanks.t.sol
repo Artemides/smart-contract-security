@@ -116,4 +116,13 @@ contract GivingThanksTest is Test {
 
         assertEq(anyCharity.balance, 1 ether);
     }
+
+    function testImpededDonations() public {
+        // run setUp which deploys as follows
+        // new GivingThanks(address(registryContract));
+        vm.deal(donor, 10 ether);
+        vm.expectRevert();
+        vm.prank(donor);
+        charityContract.donate{ value: 1 ether }(charity);
+    }
 }
