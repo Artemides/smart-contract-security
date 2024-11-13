@@ -50,6 +50,32 @@
     }
 ```
 
+# [M-2] Unsafe NFT Minting with `_mint` for Donators who not support ERC721Receiver
+
+s
+**Description:** within the `GivingThanks:donate`, the function `_mint` is called which transfers tokens to recipients wether they support ERC721Receiver, that if donator do not handle these tokens, they will be get stuck.
+
+```javascript
+   function donate(address charity) public payable {
+        require(registry.isVerified(charity), "Charity not verified");
+        (bool sent,) = charity.call{ value: msg.value }("");
+        require(sent, "Failed to send Ether");
+    @>  _mint(msg.sender, tokenCounter);
+        string memory uri = _createTokenURI(msg.sender, block.timestamp, msg.value);
+        _setTokenURI(tokenCounter, uri);
+
+        tokenCounter += 1;
+    }
+```
+
+**Impact:** Permanent loss of tokens with the donators if they do not implement ERC721Receiver
+
+**Proof of Concept:**
+
+**Recommended Mitigation:**
+
+- use `_safeMint` instead for contract donators.
+
 # Low
 
 # [L-1] `_registry` should be set instead of msg.sender at construction
