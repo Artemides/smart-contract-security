@@ -4,7 +4,7 @@ out = "out"
 libs = ["lib"]
 auto_detect_solc = true
 seed = "0x1"
-
+evm_version = "cancun"
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
 [fuzz]
