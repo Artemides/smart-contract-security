@@ -1,4 +1,20 @@
-# Findings
+lear# Findings
+
+# High
+
+## [H-1] No withdrawal mechanism, leads to funds loss forever
+
+**Description:** `TwentyOne` does not implement any mechanism to withdraw funds, which means the ether hold by the protocol will be stuck forever.
+
+**Impact:** permanent funds loss
+
+**Proof of Concept:**
+No withdrawal function implemented
+
+**Recommended Mitigation:**
+
+- implement ownership mechanism
+- implement `withdraw` function to transfer protocol's funds to `owner`
 
 # Medium
 
@@ -108,4 +124,45 @@
 +        return address(this).balance >= (activePlayers + 1) * 2;
 +    }
 
+```
+
+# Low
+
+## [L-1] Gas Limit DOS by transfering winner fees
+
+**Description:** By ending the game the `transfer` method is used, which is tied to a `2300 gas` limitation being not enough to successfully transfer to accounts containing heavy computation for ether receives.
+
+```javascript
+    function endGame(address player, bool playerWon) internal {
+        delete playersDeck[player].playersCards; // Clear the player's cards
+        delete dealersDeck[player].dealersCards; // Clear the dealer's cards
+        delete availableCards[player]; // Reset the deck
+        if (playerWon) {
+=>          payable(player).transfer(2 ether); // Transfer the prize to the player
+
+            emit FeeWithdrawn(player, 2 ether); // Emit the prize withdrawal event
+        }
+    }
+```
+
+**Impact:** account winner won't receive fees.
+
+**Proof of Concept:**
+
+**Recommended Mitigation:**
+
+use low level `call` function instead of `transfer`
+
+```diff
+    function endGame(address player, bool playerWon) internal {
+        delete playersDeck[player].playersCards; // Clear the player's cards
+        delete dealersDeck[player].dealersCards; // Clear the dealer's cards
+        delete availableCards[player]; // Reset the deck
+        if (playerWon) {
+-           payable(player).transfer(2 ether);
++           (bool success,) = msg.sender.call{ value: 2 ether }("");
++           require(success);
+            emit FeeWithdrawn(player, 2 ether); // Emit the prize withdrawal event
+        }
+    }
 ```

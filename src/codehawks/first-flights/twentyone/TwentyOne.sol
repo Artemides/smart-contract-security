@@ -136,13 +136,13 @@ contract TwentyOne {
         delete playersDeck[player].playersCards; // Clear the player's cards
         delete dealersDeck[player].dealersCards; // Clear the dealer's cards
         delete availableCards[player]; // Reset the deck
+        --players;
         if (playerWon) {
             // payable(player).transfer(2 ether); // Transfer the prize to the player
             (bool s,) = msg.sender.call{ value: 2 ether }("");
             require(s);
             emit FeeWithdrawn(player, 2 ether); // Emit the prize withdrawal event
         }
-        --players;
     }
 
     function getPlayerCards(address player) public view returns (uint256[] memory) {

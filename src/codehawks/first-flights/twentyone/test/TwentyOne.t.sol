@@ -120,6 +120,16 @@ contract TwentyOneTest is Test {
         _makeWin(player4);
     }
 
+    function testCardsHigherThan13() public {
+        uint256 randomIdx;
+        while (randomIdx < 21) {
+            randomIdx = uint256(keccak256(abi.encodePacked(block.timestamp, player1, block.prevrandao))) % 52;
+            vm.warp(block.timestamp + 1);
+        }
+
+        vm.startPrank(player1);
+    }
+
     function _makeWin(address player) internal {
         vm.startPrank(player); // Start acting as player1
 
